@@ -29,7 +29,7 @@ install(TARGETS use_installdir
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Install the cpplib shared library that the executable depends on
-file(GLOB CPPLIB_LIBS "${CMAKE_PREFIX_PATH}/lib/libcpplib.so*")
+file(GLOB CPPLIB_LIBS "${CMAKE_PREFIX_PATH}/lib/libcpplib*.so*")
 if(CPPLIB_LIBS)
     install(FILES ${CPPLIB_LIBS}
             DESTINATION ${CMAKE_INSTALL_LIBDIR})

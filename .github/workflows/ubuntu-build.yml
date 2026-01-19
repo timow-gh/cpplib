@@ -1,0 +1,20 @@
+name: Ubuntu Build
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  ubuntu-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        compiler: [gcc, clang]
+        build_type: [debug, release]
+    name: Build - ${{ matrix.compiler }} - ${{ matrix.build_type }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ubuntu-build-steps
+        with:
+          cmake_workflow: workflow-test-${{ matrix.compiler }}-${{ matrix.build_type }}

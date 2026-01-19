@@ -1,0 +1,24 @@
+name: Ubuntu Coverage
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  ubuntu-coverage:
+    runs-on: ubuntu-latest
+    name: Code Coverage
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ubuntu-build-steps
+        with:
+          cmake_workflow: workflow-test-gcc-coverage
+          install_tools: lcov
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: out/build/conf-unixlike-gcc-coverage/coverage_html/
+          retention-days: 30

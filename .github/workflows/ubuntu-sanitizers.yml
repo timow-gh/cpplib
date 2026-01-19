@@ -1,0 +1,19 @@
+name: Ubuntu Sanitizers
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  ubuntu-sanitizers:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        sanitizer: [asan, tsan, ubsan]
+    name: Sanitizer - clang - debug - ${{ matrix.sanitizer }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/ubuntu-build-steps
+        with:
+          cmake_workflow: workflow-test-clang-debug-${{ matrix.sanitizer }}

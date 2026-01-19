@@ -1,0 +1,29 @@
+name: 'Ubuntu CMake Workflow'
+description: 'Run a CMake workflow preset for Ubuntu builds'
+inputs:
+  cmake_workflow:
+    description: 'The cmake workflow to use.'
+    required: true
+  install_tools:
+    description: 'Additional tools to install (space-separated list: lcov, clang-tidy, cppcheck)'
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+    
+    - name: Install additional tools
+      if: inputs.install_tools != ''
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ${{ inputs.install_tools }}
+      shell: bash
+    
+    - name: Run CMake workflow
+      run: |
+        cmake --workflow --preset ${{ inputs.cmake_workflow }}
+      shell: bash
