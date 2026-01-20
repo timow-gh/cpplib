@@ -1,0 +1,26 @@
+name: Windows Build
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        build_type: [debug, release]
+    name: Build - msvc - ${{ matrix.build_type }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+      
+      - name: Setup MSVC
+        uses: microsoft/setup-msbuild@v2
+      
+      - name: Run CMake workflow
+        run: |
+          cmake --workflow --preset workflow-test-msvc-${{ matrix.build_type }}
+        shell: pwsh

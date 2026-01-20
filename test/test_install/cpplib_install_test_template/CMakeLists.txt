@@ -29,8 +29,18 @@ install(TARGETS use_installdir
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # Install the cpplib shared library that the executable depends on
-file(GLOB CPPLIB_LIBS "${CMAKE_PREFIX_PATH}/lib/libcpplib*.so*")
-if(CPPLIB_LIBS)
-    install(FILES ${CPPLIB_LIBS}
-            DESTINATION ${CMAKE_INSTALL_LIBDIR})
+if(MSVC)
+    # On Windows, DLLs are in the bin directory
+    file(GLOB CPPLIB_DLLS "${CMAKE_PREFIX_PATH}/bin/cpplib*.dll")
+    if(CPPLIB_DLLS)
+        install(FILES ${CPPLIB_DLLS}
+                DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
+else()
+    # On Unix-like systems, shared libraries are in lib directory
+    file(GLOB CPPLIB_LIBS "${CMAKE_PREFIX_PATH}/lib/libcpplib*.so*")
+    if(CPPLIB_LIBS)
+        install(FILES ${CPPLIB_LIBS}
+                DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    endif()
 endif()
