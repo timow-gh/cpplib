@@ -8,6 +8,10 @@ inputs:
     description: 'Additional tools to install (space-separated list: lcov, clang-tidy, cppcheck)'
     required: false
     default: ''
+  build_shared_libs:
+    description: 'Whether to build shared libraries (ON/OFF)'
+    required: false
+    default: 'ON'
 
 runs:
   using: "composite"
@@ -25,5 +29,5 @@ runs:
     
     - name: Run CMake workflow
       run: |
-        cmake --workflow --preset ${{ inputs.cmake_workflow }}
+        cmake --workflow --preset ${{ inputs.cmake_workflow }} -DBUILD_SHARED_LIBS=${{ inputs.build_shared_libs }}
       shell: bash

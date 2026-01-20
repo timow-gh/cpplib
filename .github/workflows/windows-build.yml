@@ -11,7 +11,12 @@ jobs:
       fail-fast: true
       matrix:
         build_type: [debug, release]
-    name: Build - msvc - ${{ matrix.build_type }}
+        library_type: [shared]
+        include:
+          # Test static libraries only in release build to minimize CI time
+          - build_type: release
+            library_type: static
+    name: Build - msvc - ${{ matrix.build_type }} - ${{ matrix.library_type }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,5 +27,5 @@ jobs:
       
       - name: Run CMake workflow
         run: |
-          cmake --workflow --preset workflow-test-msvc-${{ matrix.build_type }}
+          cmake --workflow --preset workflow-test-msvc-${{ matrix.build_type }} -DBUILD_SHARED_LIBS=${{ matrix.library_type == 'shared' && 'ON' || 'OFF' }}
         shell: pwsh

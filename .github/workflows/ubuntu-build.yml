@@ -12,9 +12,16 @@ jobs:
       matrix:
         compiler: [gcc, clang]
         build_type: [debug, release]
-    name: Build - ${{ matrix.compiler }} - ${{ matrix.build_type }}
+        library_type: [shared]
+        include:
+          # Test static libraries only in release builds to minimize CI time
+          - compiler: gcc
+            build_type: release
+            library_type: static
+    name: Build - ${{ matrix.compiler }} - ${{ matrix.build_type }} - ${{ matrix.library_type }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/ubuntu-build-steps
         with:
           cmake_workflow: workflow-test-${{ matrix.compiler }}-${{ matrix.build_type }}
+          build_shared_libs: ${{ matrix.library_type == 'shared' && 'ON' || 'OFF' }}
