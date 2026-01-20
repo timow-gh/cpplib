@@ -1,1 +1,2 @@
-﻿
+﻿[![Ubuntu Build](https://github.com/timow-gh/cpplib/actions/workflows/ubuntu-build.yml/badge.svg?branch=main)](https://github.com/timow-gh/cpplib/actions/workflows/ubuntu-build.yml)
+[![Windows Build](https://github.com/timow-gh/cpplib/actions/workflows/windows-build.yml/badge.svg)](https://github.com/timow-gh/cpplib/actions/workflows/windows-build.yml)
