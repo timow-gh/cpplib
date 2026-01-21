@@ -25,7 +25,17 @@ jobs:
       - name: Setup MSVC
         uses: microsoft/setup-msbuild@v2
       
-      - name: Run CMake workflow
+      - name: Configure
         run: |
-          cmake --workflow --preset workflow-test-msvc-${{ matrix.build_type }} -DBUILD_SHARED_LIBS=${{ matrix.library_type == 'shared' && 'ON' || 'OFF' }}
+          cmake --preset conf-windows-msvc-${{ matrix.build_type }} -DBUILD_SHARED_LIBS=${{ matrix.library_type == 'shared' && 'ON' || 'OFF' }}
+        shell: pwsh
+      
+      - name: Build
+        run: |
+          cmake --build --preset build-windows-msvc-${{ matrix.build_type }}
+        shell: pwsh
+      
+      - name: Test
+        run: |
+          ctest --preset test-windows-msvc-${{ matrix.build_type }}
         shell: pwsh

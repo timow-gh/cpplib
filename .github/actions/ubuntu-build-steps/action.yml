@@ -27,7 +27,29 @@ runs:
         sudo apt-get install -y ${{ inputs.install_tools }}
       shell: bash
     
-    - name: Run CMake workflow
+    - name: Extract preset names
+      id: preset
       run: |
-        cmake --workflow --preset ${{ inputs.cmake_workflow }} -DBUILD_SHARED_LIBS=${{ inputs.build_shared_libs }}
+        WORKFLOW_NAME="${{ inputs.cmake_workflow }}"
+        # Extract compiler and build type from workflow name
+        # workflow-test-gcc-release -> conf-unixlike-gcc-release
+        BASE_NAME="${WORKFLOW_NAME#workflow-test-}"
+        echo "configure=conf-unixlike-${BASE_NAME}" >> $GITHUB_OUTPUT
+        echo "build=build-unixlike-${BASE_NAME}" >> $GITHUB_OUTPUT
+        echo "test=test-unixlike-${BASE_NAME}" >> $GITHUB_OUTPUT
+      shell: bash
+    
+    - name: Configure
+      run: |
+        cmake --preset ${{ steps.preset.outputs.configure }} -DBUILD_SHARED_LIBS=${{ inputs.build_shared_libs }}
+      shell: bash
+    
+    - name: Build
+      run: |
+        cmake --build --preset ${{ steps.preset.outputs.build }}
+      shell: bash
+    
+    - name: Test
+      run: |
+        ctest --preset ${{ steps.preset.outputs.test }}
       shell: bash
