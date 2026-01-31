@@ -19,3 +19,16 @@ jobs:
       - uses: ./.github/actions/ubuntu-build-steps
         with:
           cmake_workflow: workflow-test-clang-debug-${{ matrix.sanitizer }}
+  
+  sanitizers-summary:
+    runs-on: ubuntu-latest
+    needs: ubuntu-sanitizers
+    if: always()
+    steps:
+      - name: Check sanitizers status
+        run: |
+          if [ "${{ needs.ubuntu-sanitizers.result }}" != "success" ]; then
+            echo "Sanitizer checks failed"
+            exit 1
+          fi
+          echo "All sanitizer checks passed"
