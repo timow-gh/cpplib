@@ -29,3 +29,16 @@ jobs:
         with:
           cmake_workflow: workflow-test-${{ matrix.compiler }}-${{ matrix.build_type }}
           build_shared_libs: ${{ matrix.library_type == 'shared' && 'ON' || 'OFF' }}
+  
+  ubuntu-build-summary:
+    runs-on: ubuntu-latest
+    needs: ubuntu-build
+    if: always()
+    steps:
+      - name: Check build status
+        run: |
+          if [ "${{ needs.ubuntu-build.result }}" != "success" ]; then
+            echo "Ubuntu build failed"
+            exit 1
+          fi
+          echo "All Ubuntu builds passed"
