@@ -2,7 +2,7 @@ name: Windows Build
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'develop-**']
 
 jobs:
   windows-build:
@@ -16,6 +16,9 @@ jobs:
           # Test static libraries only in release build to minimize CI time
           - build_type: release
             library_type: static
+        exclude:
+          # For develop-* branches, run only msvc+debug+shared
+          - build_type: ${{ startsWith(github.ref, 'refs/heads/develop-') && 'release' || '_no_match_' }}
     name: Build - msvc - ${{ matrix.build_type }} - ${{ matrix.library_type }}
     steps:
       - uses: actions/checkout@v4

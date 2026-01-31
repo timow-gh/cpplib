@@ -1,0 +1,68 @@
+name: Stale Branch Cleanup
+
+on:
+  schedule:
+    # Run every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write # Required to delete branches
+  pull-requests: write # Required to post comments on PRs
+
+jobs:
+  stale-branches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all branches
+      
+      - name: Cleanup stale develop-* branches
+        uses: actions/stale@v9
+        with:
+          # Target pull requests associated with develop-* branches
+          stale-pr-message: >
+            This pull request's branch (`develop-*`) has been inactive for 90 days and is marked as stale.
+            If you need to keep this branch, rename it to `develop-keep-*` to exempt it from automatic cleanup.
+            Otherwise, this branch will be automatically deleted in 14 days.
+            
+            To preserve this branch, either:
+            - Push a new commit to reset the inactivity timer
+            - Rename to `develop-keep-*` for permanent exemption
+            - Comment on this PR to extend the grace period
+          
+          close-pr-message: >
+            This pull request's branch has been inactive for over 104 days (90 days + 14 day grace period)
+            and is now being marked for closure. The branch may be deleted. If this was done in error,
+            you can reopen the PR or restore the branch from git history.
+          
+          # Don't process issues, only PRs
+          stale-issue-message: ''
+          close-issue-message: ''
+          
+          days-before-stale: 90
+          days-before-close: 14
+          days-before-issue-stale: -1 # Disable issue processing
+          days-before-issue-close: -1 # Disable issue processing
+          
+          # Labels
+          stale-pr-label: 'stale'
+          close-pr-label: 'autoclosed'
+          exempt-pr-labels: 'keep-alive,long-running'
+          
+          # Only target PRs (not issues)
+          only-labels: ''
+          any-of-labels: ''
+          
+          # Operations
+          operations-per-run: 30
+          remove-stale-when-updated: true
+          
+          # Debugging
+          debug-only: false
+          ascending: false
+          
+          # GitHub token
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
