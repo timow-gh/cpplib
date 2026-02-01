@@ -10,6 +10,9 @@ jobs:
   ubuntu-coverage:
     runs-on: ubuntu-latest
     name: Code Coverage
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/ubuntu-build-steps
@@ -21,6 +24,54 @@ jobs:
         run: |
           cmake --build --preset build-unixlike-gcc-coverage-report
         shell: bash
+      
+      - name: Extract coverage metrics
+        id: coverage
+        run: |
+          SUMMARY=$(lcov --summary out/build/conf-unixlike-gcc-coverage/coverage_filtered.info 2>&1)
+          LINE_COV=$(echo "$SUMMARY" | grep -oP 'lines......: \K[0-9.]+(?=%)' || echo "0")
+          BRANCH_COV=$(echo "$SUMMARY" | grep -oP 'branches...: \K[0-9.]+(?=%)' || echo "0")
+          
+          echo "line=$LINE_COV" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH_COV" >> $GITHUB_OUTPUT
+          
+          # Determine status (Low < 70% < Fair < 80% < Good)
+          if (( $(echo "$LINE_COV < 70" | bc -l) )); then
+            echo "status=Low" >> $GITHUB_OUTPUT
+          elif (( $(echo "$LINE_COV >= 80" | bc -l) )); then
+            echo "status=Good" >> $GITHUB_OUTPUT
+          else
+            echo "status=Fair" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+        continue-on-error: true
+      
+      - name: Add coverage to job summary
+        if: always()
+        run: |
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ steps.coverage.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Lines:** ${{ steps.coverage.outputs.line }}%" >> $GITHUB_STEP_SUMMARY
+          echo "**Branches:** ${{ steps.coverage.outputs.branch }}%" >> $GITHUB_STEP_SUMMARY
+        shell: bash
+      
+      - name: Add coverage PR comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          message: |
+            ## Coverage Report (${{ steps.coverage.outputs.status }})
+            
+            | Metric | Coverage |
+            |--------|----------|
+            | **Lines** | ${{ steps.coverage.outputs.line }}% |
+            | **Branches** | ${{ steps.coverage.outputs.branch }}% |
+            
+            [Download detailed HTML report from workflow artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            _This check is informational and won't block the PR._
       
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
