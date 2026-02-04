@@ -37,6 +37,24 @@
       }
     },
     {
+      "name": "conf-shared-libs",
+      "description": "Build shared/dynamic libraries",
+      "hidden": true,
+      "inherits": "conf-common",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "ON"
+      }
+    },
+    {
+      "name": "conf-static-libs",
+      "description": "Build static libraries",
+      "hidden": true,
+      "inherits": "conf-common",
+      "cacheVariables": {
+        "BUILD_SHARED_LIBS": "OFF"
+      }
+    },
+    {
       "name": "conf-relwithdebinfo",
       "description": "Release build with debug info settings",
       "hidden": true,
@@ -126,6 +144,26 @@
       ]
     },
     {
+      "name": "conf-windows-msvc-release-shared",
+      "displayName": "msvc Release (Shared)",
+      "description": "Target Windows with the msvc compiler, release build type, shared libraries",
+      "inherits": [
+        "conf-windows-common",
+        "conf-release",
+        "conf-shared-libs"
+      ]
+    },
+    {
+      "name": "conf-windows-msvc-release-static",
+      "displayName": "msvc Release (Static)",
+      "description": "Target Windows with the msvc compiler, release build type, static libraries",
+      "inherits": [
+        "conf-windows-common",
+        "conf-release",
+        "conf-static-libs"
+      ]
+    },
+    {
       "name": "conf-unixlike-gcc-debug",
       "displayName": "gcc Debug",
       "description": "Target Unix-like OS with the gcc compiler, debug build type",
@@ -153,6 +191,26 @@
       ]
     },
     {
+      "name": "conf-unixlike-gcc-release-shared",
+      "displayName": "gcc Release (Shared)",
+      "description": "Target Unix-like OS with the gcc compiler, release build type, shared libraries",
+      "inherits": [
+        "conf-unixlike-gcc-common",
+        "conf-release",
+        "conf-shared-libs"
+      ]
+    },
+    {
+      "name": "conf-unixlike-gcc-release-static",
+      "displayName": "gcc Release (Static)",
+      "description": "Target Unix-like OS with the gcc compiler, release build type, static libraries",
+      "inherits": [
+        "conf-unixlike-gcc-common",
+        "conf-release",
+        "conf-static-libs"
+      ]
+    },
+    {
       "name": "conf-unixlike-clang-debug",
       "displayName": "clang Debug",
       "description": "Target Unix-like OS with the clang compiler, debug build type",
@@ -177,6 +235,26 @@
       "inherits": [
         "conf-unixlike-clang-common",
         "conf-release"
+      ]
+    },
+    {
+      "name": "conf-unixlike-clang-release-shared",
+      "displayName": "clang Release (Shared)",
+      "description": "Target Unix-like OS with the clang compiler, release build type, shared libraries",
+      "inherits": [
+        "conf-unixlike-clang-common",
+        "conf-release",
+        "conf-shared-libs"
+      ]
+    },
+    {
+      "name": "conf-unixlike-clang-release-static",
+      "displayName": "clang Release (Static)",
+      "description": "Target Unix-like OS with the clang compiler, release build type, static libraries",
+      "inherits": [
+        "conf-unixlike-clang-common",
+        "conf-release",
+        "conf-static-libs"
       ]
     },
     {
