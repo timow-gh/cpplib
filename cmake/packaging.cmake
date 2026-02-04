@@ -54,7 +54,6 @@ set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}")
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)  # Standard naming: name_version_arch.deb
 
 # Component-specific DEB settings${PKG_DEB_RUNTIME_NAME}")
-endif()
 set(CPACK_DEBIAN_DEV_PACKAGE_NAME "${PKG_DEB_DEV_NAME}")
 set(CPACK_DEBIAN_DEV_PACKAGE_SECTION "libdevel")
 
