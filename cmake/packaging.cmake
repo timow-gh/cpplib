@@ -47,7 +47,7 @@ set(CPACK_COMPONENT_DEV_DESCRIPTION
     "Header files, static libraries, and CMake configuration files for development")
 
 # Archive generators (TGZ, TBZ2) - component-based
-set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)====
+set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
 # DEB (Debian/Ubuntu) Configuration
 set(CPACK_DEB_COMPONENT_INSTALL ON)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}")
