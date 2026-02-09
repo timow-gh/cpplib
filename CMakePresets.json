@@ -144,6 +144,15 @@
       ]
     },
     {
+      "name": "conf-windows-msvc-relwithdebinfo",
+      "displayName": "msvc RelWithDebInfo (User Mode)",
+      "description": "Target Windows with the msvc compiler, release with debug info build type",
+      "inherits": [
+        "conf-windows-common",
+        "conf-relwithdebinfo"
+      ]
+    },
+    {
       "name": "conf-windows-msvc-release-shared",
       "displayName": "msvc Release (Shared)",
       "description": "Target Windows with the msvc compiler, release build type, shared libraries",
@@ -452,7 +461,7 @@
     {
       "name": "build-common",
       "hidden": true,
-      "jobs": 24
+      "jobs": 0
     },
     {
       "name": "build-debug",
@@ -483,6 +492,12 @@
       "inherits": "build-release",
       "configurePreset": "conf-windows-msvc-release",
       "displayName": "msvc Release Build"
+    },
+    {
+      "name": "build-windows-msvc-relwithdebinfo",
+      "inherits": "build-relwithdebinfo",
+      "configurePreset": "conf-windows-msvc-relwithdebinfo",
+      "displayName": "msvc RelWithDebInfo Build"
     },
     {
       "name": "build-windows-msvc-release-shared",
@@ -543,6 +558,18 @@
       "inherits": "build-release",
       "configurePreset": "conf-unixlike-clang-release",
       "displayName": "clang Release Build"
+    },
+    {
+      "name": "build-unixlike-clang-release-shared",
+      "inherits": "build-release",
+      "configurePreset": "conf-unixlike-clang-release-shared",
+      "displayName": "clang Release Build (Shared)"
+    },
+    {
+      "name": "build-unixlike-clang-release-static",
+      "inherits": "build-release",
+      "configurePreset": "conf-unixlike-clang-release-static",
+      "displayName": "clang Release Build (Static)"
     },
     {
       "name": "build-unixlike-gcc-debug-asan",
@@ -712,6 +739,16 @@
       "configurePreset": "conf-windows-msvc-release"
     },
     {
+      "name": "test-windows-msvc-relwithdebinfo",
+      "displayName": "msvc RelWithDebInfo Tests",
+      "description": "Enable output and stop on failure",
+      "inherits": [
+        "test-windows-msvc-common",
+        "test-relwithdebinfo"
+      ],
+      "configurePreset": "conf-windows-msvc-relwithdebinfo"
+    },
+    {
       "name": "test-windows-msvc-release-shared",
       "displayName": "msvc Release Tests (Shared)",
       "description": "Enable output and stop on failure",
@@ -790,6 +827,26 @@
         "test-release"
       ],
       "configurePreset": "conf-unixlike-clang-release"
+    },
+    {
+      "name": "test-unixlike-clang-release-shared",
+      "displayName": "clang Release Tests (Shared)",
+      "description": "Enable output and stop on failure",
+      "inherits": [
+        "test-unixlike-common",
+        "test-release"
+      ],
+      "configurePreset": "conf-unixlike-clang-release-shared"
+    },
+    {
+      "name": "test-unixlike-clang-release-static",
+      "displayName": "clang Release Tests (Static)",
+      "description": "Enable output and stop on failure",
+      "inherits": [
+        "test-unixlike-common",
+        "test-release"
+      ],
+      "configurePreset": "conf-unixlike-clang-release-static"
     },
     {
       "name": "test-unixlike-gcc-debug-asan",
@@ -1156,6 +1213,25 @@
         {
           "type": "test",
           "name": "test-windows-msvc-release"
+        }
+      ]
+    },
+    {
+      "name": "workflow-test-msvc-relwithdebinfo",
+      "displayName": "Windows RelWithDebInfo Workflow",
+      "description": "Configure, build and test on Windows in one step",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-windows-msvc-relwithdebinfo"
+        },
+        {
+          "type": "build",
+          "name": "build-windows-msvc-relwithdebinfo"
+        },
+        {
+          "type": "test",
+          "name": "test-windows-msvc-relwithdebinfo"
         }
       ]
     },
