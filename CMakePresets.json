@@ -485,6 +485,18 @@
       "displayName": "msvc Release Build"
     },
     {
+      "name": "build-windows-msvc-release-shared",
+      "inherits": "build-release",
+      "configurePreset": "conf-windows-msvc-release-shared",
+      "displayName": "msvc Release Build (Shared)"
+    },
+    {
+      "name": "build-windows-msvc-release-static",
+      "inherits": "build-release",
+      "configurePreset": "conf-windows-msvc-release-static",
+      "displayName": "msvc Release Build (Static)"
+    },
+    {
       "name": "build-unixlike-gcc-debug",
       "inherits": "build-debug",
       "configurePreset": "conf-unixlike-gcc-debug",
@@ -501,6 +513,18 @@
       "inherits": "build-release",
       "configurePreset": "conf-unixlike-gcc-release",
       "displayName": "gcc Release Build"
+    },
+    {
+      "name": "build-unixlike-gcc-release-shared",
+      "inherits": "build-release",
+      "configurePreset": "conf-unixlike-gcc-release-shared",
+      "displayName": "gcc Release Build (Shared)"
+    },
+    {
+      "name": "build-unixlike-gcc-release-static",
+      "inherits": "build-release",
+      "configurePreset": "conf-unixlike-gcc-release-static",
+      "displayName": "gcc Release Build (Static)"
     },
     {
       "name": "build-unixlike-clang-debug",
@@ -688,6 +712,26 @@
       "configurePreset": "conf-windows-msvc-release"
     },
     {
+      "name": "test-windows-msvc-release-shared",
+      "displayName": "msvc Release Tests (Shared)",
+      "description": "Enable output and stop on failure",
+      "inherits": [
+        "test-windows-msvc-common",
+        "test-release"
+      ],
+      "configurePreset": "conf-windows-msvc-release-shared"
+    },
+    {
+      "name": "test-windows-msvc-release-static",
+      "displayName": "msvc Release Tests (Static)",
+      "description": "Enable output and stop on failure",
+      "inherits": [
+        "test-windows-msvc-common",
+        "test-release"
+      ],
+      "configurePreset": "conf-windows-msvc-release-static"
+    },
+    {
       "name": "test-unixlike-gcc-debug",
       "displayName": "gcc Debug Tests",
       "description": "Enable output and stop on failure",
@@ -706,6 +750,26 @@
         "test-release"
       ],
       "configurePreset": "conf-unixlike-gcc-release"
+    },
+    {
+      "name": "test-unixlike-gcc-release-shared",
+      "displayName": "gcc Release Tests (Shared)",
+      "description": "Enable output and stop on failure",
+      "inherits": [
+        "test-unixlike-common",
+        "test-release"
+      ],
+      "configurePreset": "conf-unixlike-gcc-release-shared"
+    },
+    {
+      "name": "test-unixlike-gcc-release-static",
+      "displayName": "gcc Release Tests (Static)",
+      "description": "Enable output and stop on failure",
+      "inherits": [
+        "test-unixlike-common",
+        "test-release"
+      ],
+      "configurePreset": "conf-unixlike-gcc-release-static"
     },
     {
       "name": "test-unixlike-clang-debug",
@@ -938,6 +1002,46 @@
         "package-release"
       ],
       "configurePreset": "conf-unixlike-clang-release"
+    },
+    {
+      "name": "package-unixlike-gcc-release-shared",
+      "displayName": "Unix GCC Release Package (Shared)",
+      "description": "Create TGZ and DEB packages for shared libraries with GCC",
+      "inherits": [
+        "package-unixlike-common",
+        "package-release"
+      ],
+      "configurePreset": "conf-unixlike-gcc-release-shared"
+    },
+    {
+      "name": "package-unixlike-gcc-release-static",
+      "displayName": "Unix GCC Release Package (Static)",
+      "description": "Create TGZ and DEB packages for static libraries with GCC",
+      "inherits": [
+        "package-unixlike-common",
+        "package-release"
+      ],
+      "configurePreset": "conf-unixlike-gcc-release-static"
+    },
+    {
+      "name": "package-windows-msvc-release-shared",
+      "displayName": "Windows Release Package (Shared)",
+      "description": "Create ZIP and NSIS packages for shared libraries on Windows",
+      "inherits": [
+        "package-windows-common",
+        "package-release"
+      ],
+      "configurePreset": "conf-windows-msvc-release-shared"
+    },
+    {
+      "name": "package-windows-msvc-release-static",
+      "displayName": "Windows Release Package (Static)",
+      "description": "Create ZIP and NSIS packages for static libraries on Windows",
+      "inherits": [
+        "package-windows-common",
+        "package-release"
+      ],
+      "configurePreset": "conf-windows-msvc-release-static"
     }
   ],
   "workflowPresets": [
@@ -1102,6 +1206,52 @@
       ]
     },
     {
+      "name": "workflow-package-gcc-shared",
+      "displayName": "GCC Package Workflow (Shared)",
+      "description": "Configure, build, test, and package shared libraries with GCC",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-unixlike-gcc-release-shared"
+        },
+        {
+          "type": "build",
+          "name": "build-unixlike-gcc-release-shared"
+        },
+        {
+          "type": "test",
+          "name": "test-unixlike-gcc-release-shared"
+        },
+        {
+          "type": "package",
+          "name": "package-unixlike-gcc-release-shared"
+        }
+      ]
+    },
+    {
+      "name": "workflow-package-gcc-static",
+      "displayName": "GCC Package Workflow (Static)",
+      "description": "Configure, build, test, and package static libraries with GCC",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-unixlike-gcc-release-static"
+        },
+        {
+          "type": "build",
+          "name": "build-unixlike-gcc-release-static"
+        },
+        {
+          "type": "test",
+          "name": "test-unixlike-gcc-release-static"
+        },
+        {
+          "type": "package",
+          "name": "package-unixlike-gcc-release-static"
+        }
+      ]
+    },
+    {
       "name": "workflow-package-msvc",
       "displayName": "Windows Package Workflow",
       "description": "Configure, build, test, and package on Windows in release mode",
@@ -1121,6 +1271,52 @@
         {
           "type": "package",
           "name": "package-windows-msvc-release"
+        }
+      ]
+    },
+    {
+      "name": "workflow-package-msvc-shared",
+      "displayName": "Windows Package Workflow (Shared)",
+      "description": "Configure, build, test, and package shared libraries on Windows",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-windows-msvc-release-shared"
+        },
+        {
+          "type": "build",
+          "name": "build-windows-msvc-release-shared"
+        },
+        {
+          "type": "test",
+          "name": "test-windows-msvc-release-shared"
+        },
+        {
+          "type": "package",
+          "name": "package-windows-msvc-release-shared"
+        }
+      ]
+    },
+    {
+      "name": "workflow-package-msvc-static",
+      "displayName": "Windows Package Workflow (Static)",
+      "description": "Configure, build, test, and package static libraries on Windows",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-windows-msvc-release-static"
+        },
+        {
+          "type": "build",
+          "name": "build-windows-msvc-release-static"
+        },
+        {
+          "type": "test",
+          "name": "test-windows-msvc-release-static"
+        },
+        {
+          "type": "package",
+          "name": "package-windows-msvc-release-static"
         }
       ]
     },
