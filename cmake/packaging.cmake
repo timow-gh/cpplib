@@ -48,16 +48,18 @@ set(CPACK_COMPONENT_DEV_DESCRIPTION
 
 # Archive generators (TGZ, TBZ2) - component-based
 set(CPACK_ARCHIVE_COMPONENT_INSTALL ON)
+
 # DEB (Debian/Ubuntu) Configuration
 set(CPACK_DEB_COMPONENT_INSTALL ON)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}")
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)  # Standard naming: name_version_arch.deb
 
-# Component-specific DEB settings${PKG_DEB_RUNTIME_NAME}")
+# Component-specific DEB settings
 set(CPACK_DEBIAN_DEV_PACKAGE_NAME "${PKG_DEB_DEV_NAME}")
 set(CPACK_DEBIAN_DEV_PACKAGE_SECTION "libdevel")
 
 if(BUILD_SHARED_LIBS)
+    set(CPACK_DEBIAN_RUNTIME_PACKAGE_NAME "${PKG_DEB_RUNTIME_NAME}")
     set(CPACK_DEBIAN_RUNTIME_PACKAGE_SECTION "libs")
     # Automatic shared library dependency detection for runtime package
     set(CPACK_DEBIAN_RUNTIME_PACKAGE_SHLIBDEPS ON)
