@@ -64,6 +64,15 @@
       }
     },
     {
+      "name": "conf-minsizerel",
+      "description": "Minimum size release build settings",
+      "hidden": true,
+      "inherits": "conf-common",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
       "name": "conf-windows-common",
       "description": "Windows settings for MSBuild toolchain.",
       "hidden": true,
@@ -153,6 +162,15 @@
       ]
     },
     {
+      "name": "conf-windows-msvc-minsizerel",
+      "displayName": "msvc MinSizeRel (User Mode)",
+      "description": "Target Windows with the msvc compiler, minimum size release build type",
+      "inherits": [
+        "conf-windows-common",
+        "conf-minsizerel"
+      ]
+    },
+    {
       "name": "conf-windows-msvc-release-shared",
       "displayName": "msvc Release (Shared)",
       "description": "Target Windows with the msvc compiler, release build type, shared libraries",
@@ -188,6 +206,15 @@
       "inherits": [
         "conf-unixlike-gcc-common",
         "conf-relwithdebinfo"
+      ]
+    },
+    {
+      "name": "conf-unixlike-gcc-minsizerel",
+      "displayName": "gcc MinSizeRel",
+      "description": "Target Unix-like OS with the gcc compiler, minimum size release build type",
+      "inherits": [
+        "conf-unixlike-gcc-common",
+        "conf-minsizerel"
       ]
     },
     {
@@ -235,6 +262,15 @@
       "inherits": [
         "conf-unixlike-clang-common",
         "conf-relwithdebinfo"
+      ]
+    },
+    {
+      "name": "conf-unixlike-clang-minsizerel",
+      "displayName": "clang MinSizeRel",
+      "description": "Target Unix-like OS with the clang compiler, minimum size release build type",
+      "inherits": [
+        "conf-unixlike-clang-common",
+        "conf-minsizerel"
       ]
     },
     {
@@ -482,6 +518,12 @@
       "configuration": "RelWithDebInfo"
     },
     {
+      "name": "build-minsizerel",
+      "hidden": true,
+      "inherits": "build-common",
+      "configuration": "MinSizeRel"
+    },
+    {
       "name": "build-windows-msvc-debug",
       "inherits": "build-debug",
       "configurePreset": "conf-windows-msvc-debug",
@@ -498,6 +540,12 @@
       "inherits": "build-relwithdebinfo",
       "configurePreset": "conf-windows-msvc-relwithdebinfo",
       "displayName": "msvc RelWithDebInfo Build"
+    },
+    {
+      "name": "build-windows-msvc-minsizerel",
+      "inherits": "build-minsizerel",
+      "configurePreset": "conf-windows-msvc-minsizerel",
+      "displayName": "msvc MinSizeRel Build"
     },
     {
       "name": "build-windows-msvc-release-shared",
@@ -522,6 +570,12 @@
       "inherits": "build-relwithdebinfo",
       "configurePreset": "conf-unixlike-gcc-relwithdebinfo",
       "displayName": "gcc RelWithDebInfo Build"
+    },
+    {
+      "name": "build-unixlike-gcc-minsizerel",
+      "inherits": "build-minsizerel",
+      "configurePreset": "conf-unixlike-gcc-minsizerel",
+      "displayName": "gcc MinSizeRel Build"
     },
     {
       "name": "build-unixlike-gcc-release",
@@ -552,6 +606,12 @@
       "inherits": "build-relwithdebinfo",
       "configurePreset": "conf-unixlike-clang-relwithdebinfo",
       "displayName": "clang RelWithDebInfo Build"
+    },
+    {
+      "name": "build-unixlike-clang-minsizerel",
+      "inherits": "build-minsizerel",
+      "configurePreset": "conf-unixlike-clang-minsizerel",
+      "displayName": "clang MinSizeRel Build"
     },
     {
       "name": "build-unixlike-clang-release",
@@ -705,6 +765,16 @@
       }
     },
     {
+      "name": "test-minsizerel",
+      "description": "MinSizeRel build test settings",
+      "hidden": true,
+      "inherits": "test-common",
+      "configuration": "MinSizeRel",
+      "environment": {
+        "CTEST_CONFIGURATION_TYPE": "MinSizeRel"
+      }
+    },
+    {
       "name": "test-unixlike-common",
       "displayName": "Strict",
       "description": "Enable output and stop on failure",
@@ -749,6 +819,16 @@
       "configurePreset": "conf-windows-msvc-relwithdebinfo"
     },
     {
+      "name": "test-windows-msvc-minsizerel",
+      "displayName": "msvc MinSizeRel Tests",
+      "description": "Enable output and stop on failure",
+      "inherits": [
+        "test-windows-msvc-common",
+        "test-minsizerel"
+      ],
+      "configurePreset": "conf-windows-msvc-minsizerel"
+    },
+    {
       "name": "test-windows-msvc-release-shared",
       "displayName": "msvc Release Tests (Shared)",
       "description": "Enable output and stop on failure",
@@ -777,6 +857,26 @@
         "test-debug"
       ],
       "configurePreset": "conf-unixlike-gcc-debug"
+    },
+    {
+      "name": "test-unixlike-gcc-relwithdebinfo",
+      "displayName": "gcc RelWithDebInfo Tests",
+      "description": "Enable output and stop on failure",
+      "inherits": [
+        "test-unixlike-common",
+        "test-relwithdebinfo"
+      ],
+      "configurePreset": "conf-unixlike-gcc-relwithdebinfo"
+    },
+    {
+      "name": "test-unixlike-gcc-minsizerel",
+      "displayName": "gcc MinSizeRel Tests",
+      "description": "Enable output and stop on failure",
+      "inherits": [
+        "test-unixlike-common",
+        "test-minsizerel"
+      ],
+      "configurePreset": "conf-unixlike-gcc-minsizerel"
     },
     {
       "name": "test-unixlike-gcc-release",
@@ -817,6 +917,26 @@
         "test-debug"
       ],
       "configurePreset": "conf-unixlike-clang-debug"
+    },
+    {
+      "name": "test-unixlike-clang-relwithdebinfo",
+      "displayName": "clang RelWithDebInfo Tests",
+      "description": "Enable output and stop on failure",
+      "inherits": [
+        "test-unixlike-common",
+        "test-relwithdebinfo"
+      ],
+      "configurePreset": "conf-unixlike-clang-relwithdebinfo"
+    },
+    {
+      "name": "test-unixlike-clang-minsizerel",
+      "displayName": "clang MinSizeRel Tests",
+      "description": "Enable output and stop on failure",
+      "inherits": [
+        "test-unixlike-common",
+        "test-minsizerel"
+      ],
+      "configurePreset": "conf-unixlike-clang-minsizerel"
     },
     {
       "name": "test-unixlike-clang-release",
@@ -1141,6 +1261,44 @@
       ]
     },
     {
+      "name": "workflow-test-clang-relwithdebinfo",
+      "displayName": "Clang RelWithDebInfo Workflow",
+      "description": "Configure, build and test with Clang in one step",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-unixlike-clang-relwithdebinfo"
+        },
+        {
+          "type": "build",
+          "name": "build-unixlike-clang-relwithdebinfo"
+        },
+        {
+          "type": "test",
+          "name": "test-unixlike-clang-relwithdebinfo"
+        }
+      ]
+    },
+    {
+      "name": "workflow-test-clang-minsizerel",
+      "displayName": "Clang MinSizeRel Workflow",
+      "description": "Configure, build and test with Clang in one step",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-unixlike-clang-minsizerel"
+        },
+        {
+          "type": "build",
+          "name": "build-unixlike-clang-minsizerel"
+        },
+        {
+          "type": "test",
+          "name": "test-unixlike-clang-minsizerel"
+        }
+      ]
+    },
+    {
       "name": "workflow-test-gcc-debug",
       "displayName": "GCC Debug Workflow",
       "description": "Configure, build and test with GCC in one step",
@@ -1175,6 +1333,44 @@
         {
           "type": "test",
           "name": "test-unixlike-gcc-release"
+        }
+      ]
+    },
+    {
+      "name": "workflow-test-gcc-relwithdebinfo",
+      "displayName": "GCC RelWithDebInfo Workflow",
+      "description": "Configure, build and test with GCC in one step",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-unixlike-gcc-relwithdebinfo"
+        },
+        {
+          "type": "build",
+          "name": "build-unixlike-gcc-relwithdebinfo"
+        },
+        {
+          "type": "test",
+          "name": "test-unixlike-gcc-relwithdebinfo"
+        }
+      ]
+    },
+    {
+      "name": "workflow-test-gcc-minsizerel",
+      "displayName": "GCC MinSizeRel Workflow",
+      "description": "Configure, build and test with GCC in one step",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-unixlike-gcc-minsizerel"
+        },
+        {
+          "type": "build",
+          "name": "build-unixlike-gcc-minsizerel"
+        },
+        {
+          "type": "test",
+          "name": "test-unixlike-gcc-minsizerel"
         }
       ]
     },
@@ -1232,6 +1428,25 @@
         {
           "type": "test",
           "name": "test-windows-msvc-relwithdebinfo"
+        }
+      ]
+    },
+    {
+      "name": "workflow-test-msvc-minsizerel",
+      "displayName": "Windows MinSizeRel Workflow",
+      "description": "Configure, build and test on Windows in one step",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-windows-msvc-minsizerel"
+        },
+        {
+          "type": "build",
+          "name": "build-windows-msvc-minsizerel"
+        },
+        {
+          "type": "test",
+          "name": "test-windows-msvc-minsizerel"
         }
       ]
     },
