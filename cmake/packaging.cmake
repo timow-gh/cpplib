@@ -1,13 +1,21 @@
 # Base library name (derived from project name, lowercase for convention)
 string(TOLOWER "${PROJECT_NAME}" PKG_LIB_NAME)
 
-# Debian package naming (following Debian Policy Manual)
-set(PKG_DEB_RUNTIME_NAME "lib${PKG_LIB_NAME}${PROJECT_VERSION_MAJOR}")
-set(PKG_DEB_DEV_NAME "lib${PKG_LIB_NAME}-dev")
-
-# RPM package naming (following Fedora/RedHat guidelines)
-set(PKG_RPM_RUNTIME_NAME "${PKG_LIB_NAME}-libs")
-set(PKG_RPM_DEV_NAME "${PKG_LIB_NAME}-devel")
+# Package naming based on library type (shared vs static)
+# Different naming conventions avoid filename collisions when releasing both variants
+if(BUILD_SHARED_LIBS)
+    # Shared library packages (standard naming)
+    set(PKG_DEB_RUNTIME_NAME "lib${PKG_LIB_NAME}${PROJECT_VERSION_MAJOR}")
+    set(PKG_DEB_DEV_NAME "lib${PKG_LIB_NAME}-dev")
+    set(PKG_RPM_RUNTIME_NAME "${PKG_LIB_NAME}-libs")
+    set(PKG_RPM_DEV_NAME "${PKG_LIB_NAME}-devel")
+    set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+else()
+    # Static library packages (with -static suffix to differentiate)
+    set(PKG_DEB_DEV_NAME "lib${PKG_LIB_NAME}-dev-static")
+    set(PKG_RPM_DEV_NAME "${PKG_LIB_NAME}-static")
+    set(CPACK_PACKAGE_NAME "${PROJECT_NAME}-static")
+endif()
 
 # Package metadata
 set(PKG_VENDOR "${PROJECT_NAME}")
@@ -20,7 +28,6 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug" OR CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo"
     message(WARNING "Creating packages from ${CMAKE_BUILD_TYPE} build. ")
 endif()
 
-set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
