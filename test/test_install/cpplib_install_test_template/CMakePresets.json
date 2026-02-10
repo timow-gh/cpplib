@@ -46,7 +46,7 @@
       }
     },
     {
-      "name": "conf-windows-common",
+      "name": "conf-msvc-common",
       "description": "Windows settings for MSBuild toolchain.",
       "hidden": true,
       "inherits": "conf-common",
@@ -100,16 +100,16 @@
       }
     },
     {
-      "name": "conf-windows-msvc-debug",
+      "name": "conf-msvc-debug",
       "displayName": "msvc Debug (User Mode)",
       "description": "Target Windows with the msvc compiler, debug build type",
-      "inherits": ["conf-windows-common", "conf-debug"]
+      "inherits": ["conf-msvc-common", "conf-debug"]
     },
     {
-      "name": "conf-windows-msvc-release",
+      "name": "conf-msvc-release",
       "displayName": "msvc Release (User Mode)",
       "description": "Target Windows with the msvc compiler, release build type",
-      "inherits": ["conf-windows-common", "conf-release"]
+      "inherits": ["conf-msvc-common", "conf-release"]
     },
     {
       "name": "conf-unixlike-gcc-debug",
