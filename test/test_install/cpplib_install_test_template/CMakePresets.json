@@ -79,7 +79,7 @@
       }
     },
     {
-      "name": "conf-unixlike-clang-common",
+      "name": "conf-clang-common",
       "description": "Common settings for clang compiler on Unix-like OS",
       "hidden": true,
       "inherits": "conf-unixlike-common",
@@ -90,7 +90,7 @@
       }
     },
     {
-      "name": "conf-unixlike-gcc-common",
+      "name": "conf-gcc-common",
       "description": "Common settings for gcc compiler on Unix-like OS",
       "hidden": true,
       "inherits": "conf-unixlike-common",
@@ -109,43 +109,43 @@
       "name": "conf-msvc-release",
       "displayName": "msvc Release (User Mode)",
       "description": "Target Windows with the msvc compiler, release build type",
-      "inherits": ["conf-msvc-common", "conf-release"]
+      "inherits": ["conf-windows-common", "conf-release"]
     },
     {
-      "name": "conf-unixlike-gcc-debug",
+      "name": "conf-gcc-debug",
       "displayName": "gcc Debug",
       "description": "Target Unix-like OS with the gcc compiler, debug build type",
-      "inherits": ["conf-unixlike-gcc-common", "conf-debug"]
+      "inherits": ["conf-gcc-common", "conf-debug"]
     },
     {
-      "name": "conf-unixlike-gcc-relwithdebinfo",
+      "name": "conf-gcc-relwithdebinfo",
       "displayName": "gcc RelWithDebInfo",
       "description": "Target Unix-like OS with the gcc compiler, release with debug info build type",
-      "inherits": ["conf-unixlike-gcc-common", "conf-relwithdebinfo"]
+      "inherits": ["conf-gcc-common", "conf-relwithdebinfo"]
     },
     {
-      "name": "conf-unixlike-gcc-release",
+      "name": "conf-gcc-release",
       "displayName": "gcc Release",
       "description": "Target Unix-like OS with the gcc compiler, release build type",
-      "inherits": ["conf-unixlike-gcc-common", "conf-release"]
+      "inherits": ["conf-gcc-common", "conf-release"]
     },
     {
-      "name": "conf-unixlike-clang-debug",
+      "name": "conf-clang-debug",
       "displayName": "clang Debug",
       "description": "Target Unix-like OS with the clang compiler, debug build type",
-      "inherits": ["conf-unixlike-clang-common", "conf-debug"]
+      "inherits": ["conf-clang-common", "conf-debug"]
     },
     {
-      "name": "conf-unixlike-clang-relwithdebinfo",
+      "name": "conf-clang-relwithdebinfo",
       "displayName": "clang RelWithDebInfo",
       "description": "Target Unix-like OS with the clang compiler, release with debug info build type",
-      "inherits": ["conf-unixlike-clang-common", "conf-relwithdebinfo"]
+      "inherits": ["conf-clang-common", "conf-relwithdebinfo"]
     },
     {
-      "name": "conf-unixlike-clang-release",
+      "name": "conf-clang-release",
       "displayName": "clang Release",
       "description": "Target Unix-like OS with the clang compiler, release build type",
-      "inherits": ["conf-unixlike-clang-common", "conf-release"]
+      "inherits": ["conf-clang-common", "conf-release"]
     }
   ]
 }

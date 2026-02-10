@@ -32,11 +32,11 @@ runs:
       run: |
         WORKFLOW_NAME="${{ inputs.cmake_workflow }}"
         # Extract compiler and build type from workflow name
-        # workflow-test-gcc-release -> conf-unixlike-gcc-release
+        # workflow-test-gcc-release -> conf-gcc-release
         BASE_NAME="${WORKFLOW_NAME#workflow-test-}"
-        echo "configure=conf-unixlike-${BASE_NAME}" >> $GITHUB_OUTPUT
-        echo "build=build-unixlike-${BASE_NAME}" >> $GITHUB_OUTPUT
-        echo "test=test-unixlike-${BASE_NAME}" >> $GITHUB_OUTPUT
+        echo "configure=conf-${BASE_NAME}" >> $GITHUB_OUTPUT
+        echo "build=build-${BASE_NAME}" >> $GITHUB_OUTPUT
+        echo "test=test-${BASE_NAME}" >> $GITHUB_OUTPUT
       shell: bash
     
     - name: Configure
