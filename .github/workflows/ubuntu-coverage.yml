@@ -22,13 +22,13 @@ jobs:
       
       - name: Generate coverage report
         run: |
-          cmake --build --preset build-unixlike-gcc-coverage-report
+          cmake --build --preset build-gcc-coverage-report
         shell: bash
       
       - name: Extract coverage metrics
         id: coverage
         run: |
-          SUMMARY=$(lcov --summary out/build/conf-unixlike-gcc-coverage/coverage_filtered.info 2>&1)
+          SUMMARY=$(lcov --summary out/build/conf-gcc-coverage/coverage_filtered.info 2>&1)
           LINE_COV=$(echo "$SUMMARY" | grep -oP 'lines......: \K[0-9.]+(?=%)' || echo "0")
           BRANCH_COV=$(echo "$SUMMARY" | grep -oP 'branches...: \K[0-9.]+(?=%)' || echo "0")
           
@@ -78,5 +78,5 @@ jobs:
         if: always()
         with:
           name: coverage-report
-          path: out/build/conf-unixlike-gcc-coverage/coverage_html/
+          path: out/build/conf-gcc-coverage/coverage_html/
           retention-days: 30

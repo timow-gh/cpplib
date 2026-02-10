@@ -73,7 +73,7 @@
       }
     },
     {
-      "name": "conf-windows-common",
+      "name": "conf-msvc-common",
       "description": "Windows settings for MSBuild toolchain.",
       "hidden": true,
       "inherits": "conf-common",
@@ -95,7 +95,7 @@
       }
     },
     {
-      "name": "conf-unixlike-common",
+      "name": "conf-unix-common",
       "description": "Unix-like OS settings for gcc and clang toolchains",
       "hidden": true,
       "inherits": "conf-common",
@@ -114,10 +114,10 @@
       }
     },
     {
-      "name": "conf-unixlike-clang-common",
+      "name": "conf-clang-common",
       "description": "Common settings for clang compiler on Unix-like OS",
       "hidden": true,
-      "inherits": "conf-unixlike-common",
+      "inherits": "conf-unix-common",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++",
@@ -125,188 +125,188 @@
       }
     },
     {
-      "name": "conf-unixlike-gcc-common",
+      "name": "conf-gcc-common",
       "description": "Common settings for gcc compiler on Unix-like OS",
       "hidden": true,
-      "inherits": "conf-unixlike-common",
+      "inherits": "conf-unix-common",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "gcc",
         "CMAKE_CXX_COMPILER": "g++"
       }
     },
     {
-      "name": "conf-windows-msvc-debug",
+      "name": "conf-msvc-debug",
       "displayName": "msvc Debug (User Mode)",
       "description": "Target Windows with the msvc compiler, debug build type",
       "inherits": [
-        "conf-windows-common",
+        "conf-msvc-common",
         "conf-debug"
       ]
     },
     {
-      "name": "conf-windows-msvc-release",
+      "name": "conf-msvc-release",
       "displayName": "msvc Release (User Mode)",
       "description": "Target Windows with the msvc compiler, release build type",
       "inherits": [
-        "conf-windows-common",
+        "conf-msvc-common",
         "conf-release"
       ]
     },
     {
-      "name": "conf-windows-msvc-relwithdebinfo",
+      "name": "conf-msvc-relwithdebinfo",
       "displayName": "msvc RelWithDebInfo (User Mode)",
       "description": "Target Windows with the msvc compiler, release with debug info build type",
       "inherits": [
-        "conf-windows-common",
+        "conf-msvc-common",
         "conf-relwithdebinfo"
       ]
     },
     {
-      "name": "conf-windows-msvc-minsizerel",
+      "name": "conf-msvc-minsizerel",
       "displayName": "msvc MinSizeRel (User Mode)",
       "description": "Target Windows with the msvc compiler, minimum size release build type",
       "inherits": [
-        "conf-windows-common",
+        "conf-msvc-common",
         "conf-minsizerel"
       ]
     },
     {
-      "name": "conf-windows-msvc-release-shared",
+      "name": "conf-msvc-release-shared",
       "displayName": "msvc Release (Shared)",
       "description": "Target Windows with the msvc compiler, release build type, shared libraries",
       "inherits": [
-        "conf-windows-common",
+        "conf-msvc-common",
         "conf-release",
         "conf-shared-libs"
       ]
     },
     {
-      "name": "conf-windows-msvc-release-static",
+      "name": "conf-msvc-release-static",
       "displayName": "msvc Release (Static)",
       "description": "Target Windows with the msvc compiler, release build type, static libraries",
       "inherits": [
-        "conf-windows-common",
+        "conf-msvc-common",
         "conf-release",
         "conf-static-libs"
       ]
     },
     {
-      "name": "conf-unixlike-gcc-debug",
+      "name": "conf-gcc-debug",
       "displayName": "gcc Debug",
       "description": "Target Unix-like OS with the gcc compiler, debug build type",
       "inherits": [
-        "conf-unixlike-gcc-common",
+        "conf-gcc-common",
         "conf-debug"
       ]
     },
     {
-      "name": "conf-unixlike-gcc-relwithdebinfo",
+      "name": "conf-gcc-relwithdebinfo",
       "displayName": "gcc RelWithDebInfo",
       "description": "Target Unix-like OS with the gcc compiler, release with debug info build type",
       "inherits": [
-        "conf-unixlike-gcc-common",
+        "conf-gcc-common",
         "conf-relwithdebinfo"
       ]
     },
     {
-      "name": "conf-unixlike-gcc-minsizerel",
+      "name": "conf-gcc-minsizerel",
       "displayName": "gcc MinSizeRel",
       "description": "Target Unix-like OS with the gcc compiler, minimum size release build type",
       "inherits": [
-        "conf-unixlike-gcc-common",
+        "conf-gcc-common",
         "conf-minsizerel"
       ]
     },
     {
-      "name": "conf-unixlike-gcc-release",
+      "name": "conf-gcc-release",
       "displayName": "gcc Release",
       "description": "Target Unix-like OS with the gcc compiler, release build type",
       "inherits": [
-        "conf-unixlike-gcc-common",
+        "conf-gcc-common",
         "conf-release"
       ]
     },
     {
-      "name": "conf-unixlike-gcc-release-shared",
+      "name": "conf-gcc-release-shared",
       "displayName": "gcc Release (Shared)",
       "description": "Target Unix-like OS with the gcc compiler, release build type, shared libraries",
       "inherits": [
-        "conf-unixlike-gcc-common",
+        "conf-gcc-common",
         "conf-release",
         "conf-shared-libs"
       ]
     },
     {
-      "name": "conf-unixlike-gcc-release-static",
+      "name": "conf-gcc-release-static",
       "displayName": "gcc Release (Static)",
       "description": "Target Unix-like OS with the gcc compiler, release build type, static libraries",
       "inherits": [
-        "conf-unixlike-gcc-common",
+        "conf-gcc-common",
         "conf-release",
         "conf-static-libs"
       ]
     },
     {
-      "name": "conf-unixlike-clang-debug",
+      "name": "conf-clang-debug",
       "displayName": "clang Debug",
       "description": "Target Unix-like OS with the clang compiler, debug build type",
       "inherits": [
-        "conf-unixlike-clang-common",
+        "conf-clang-common",
         "conf-debug"
       ]
     },
     {
-      "name": "conf-unixlike-clang-relwithdebinfo",
+      "name": "conf-clang-relwithdebinfo",
       "displayName": "clang RelWithDebInfo",
       "description": "Target Unix-like OS with the clang compiler, release with debug info build type",
       "inherits": [
-        "conf-unixlike-clang-common",
+        "conf-clang-common",
         "conf-relwithdebinfo"
       ]
     },
     {
-      "name": "conf-unixlike-clang-minsizerel",
+      "name": "conf-clang-minsizerel",
       "displayName": "clang MinSizeRel",
       "description": "Target Unix-like OS with the clang compiler, minimum size release build type",
       "inherits": [
-        "conf-unixlike-clang-common",
+        "conf-clang-common",
         "conf-minsizerel"
       ]
     },
     {
-      "name": "conf-unixlike-clang-release",
+      "name": "conf-clang-release",
       "displayName": "clang Release",
       "description": "Target Unix-like OS with the clang compiler, release build type",
       "inherits": [
-        "conf-unixlike-clang-common",
+        "conf-clang-common",
         "conf-release"
       ]
     },
     {
-      "name": "conf-unixlike-clang-release-shared",
+      "name": "conf-clang-release-shared",
       "displayName": "clang Release (Shared)",
       "description": "Target Unix-like OS with the clang compiler, release build type, shared libraries",
       "inherits": [
-        "conf-unixlike-clang-common",
+        "conf-clang-common",
         "conf-release",
         "conf-shared-libs"
       ]
     },
     {
-      "name": "conf-unixlike-clang-release-static",
+      "name": "conf-clang-release-static",
       "displayName": "clang Release (Static)",
       "description": "Target Unix-like OS with the clang compiler, release build type, static libraries",
       "inherits": [
-        "conf-unixlike-clang-common",
+        "conf-clang-common",
         "conf-release",
         "conf-static-libs"
       ]
     },
     {
-      "name": "conf-unixlike-asan-common",
+      "name": "conf-asan-common",
       "description": "Common AddressSanitizer settings for Unix-like OS",
       "hidden": true,
-      "inherits": "conf-unixlike-common",
+      "inherits": "conf-unix-common",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=address -fno-omit-frame-pointer -g",
         "CMAKE_C_FLAGS": "-fsanitize=address -fno-omit-frame-pointer -g",
@@ -317,10 +317,10 @@
       }
     },
     {
-      "name": "conf-unixlike-tsan-common",
+      "name": "conf-tsan-common",
       "description": "Common ThreadSanitizer settings for Unix-like OS",
       "hidden": true,
-      "inherits": "conf-unixlike-common",
+      "inherits": "conf-unix-common",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=thread -g",
         "CMAKE_C_FLAGS": "-fsanitize=thread -g",
@@ -331,10 +331,10 @@
       }
     },
     {
-      "name": "conf-unixlike-ubsan-common",
+      "name": "conf-ubsan-common",
       "description": "Common UndefinedBehaviorSanitizer settings for Unix-like OS",
       "hidden": true,
-      "inherits": "conf-unixlike-common",
+      "inherits": "conf-unix-common",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=undefined -fno-omit-frame-pointer -g",
         "CMAKE_C_FLAGS": "-fsanitize=undefined -fno-omit-frame-pointer -g",
@@ -345,10 +345,10 @@
       }
     },
     {
-      "name": "conf-unixlike-coverage-common",
+      "name": "conf-coverage-common",
       "description": "Common code coverage settings for Unix-like OS with GCC",
       "hidden": true,
-      "inherits": "conf-unixlike-gcc-common",
+      "inherits": "conf-gcc-common",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "--coverage -O0 -g",
         "CMAKE_C_FLAGS": "--coverage -O0 -g",
@@ -358,135 +358,135 @@
       }
     },
     {
-      "name": "conf-unixlike-gcc-debug-asan",
+      "name": "conf-gcc-debug-asan",
       "displayName": "gcc Debug + AddressSanitizer",
       "description": "Debug build with AddressSanitizer for memory error detection",
       "inherits": [
-        "conf-unixlike-gcc-debug",
-        "conf-unixlike-asan-common"
+        "conf-gcc-debug",
+        "conf-asan-common"
       ]
     },
     {
-      "name": "conf-unixlike-gcc-debug-tsan",
+      "name": "conf-gcc-debug-tsan",
       "displayName": "gcc Debug + ThreadSanitizer",
       "description": "Debug build with ThreadSanitizer for data race detection",
       "inherits": [
-        "conf-unixlike-gcc-debug",
-        "conf-unixlike-tsan-common"
+        "conf-gcc-debug",
+        "conf-tsan-common"
       ]
     },
     {
-      "name": "conf-unixlike-gcc-debug-ubsan",
+      "name": "conf-gcc-debug-ubsan",
       "displayName": "gcc Debug + UndefinedBehaviorSanitizer",
       "description": "Debug build with UndefinedBehaviorSanitizer for undefined behavior detection",
       "inherits": [
-        "conf-unixlike-gcc-debug",
-        "conf-unixlike-ubsan-common"
+        "conf-gcc-debug",
+        "conf-ubsan-common"
       ]
     },
     {
-      "name": "conf-unixlike-gcc-relwithdebinfo-asan",
+      "name": "conf-gcc-relwithdebinfo-asan",
       "displayName": "gcc RelWithDebInfo + AddressSanitizer",
       "description": "RelWithDebInfo build with AddressSanitizer for memory error detection",
       "inherits": [
-        "conf-unixlike-gcc-relwithdebinfo",
-        "conf-unixlike-asan-common"
+        "conf-gcc-relwithdebinfo",
+        "conf-asan-common"
       ]
     },
     {
-      "name": "conf-unixlike-gcc-relwithdebinfo-tsan",
+      "name": "conf-gcc-relwithdebinfo-tsan",
       "displayName": "gcc RelWithDebInfo + ThreadSanitizer",
       "description": "RelWithDebInfo build with ThreadSanitizer for data race detection",
       "inherits": [
-        "conf-unixlike-gcc-relwithdebinfo",
-        "conf-unixlike-tsan-common"
+        "conf-gcc-relwithdebinfo",
+        "conf-tsan-common"
       ]
     },
     {
-      "name": "conf-unixlike-gcc-relwithdebinfo-ubsan",
+      "name": "conf-gcc-relwithdebinfo-ubsan",
       "displayName": "gcc RelWithDebInfo + UndefinedBehaviorSanitizer",
       "description": "RelWithDebInfo build with UndefinedBehaviorSanitizer for undefined behavior detection",
       "inherits": [
-        "conf-unixlike-gcc-relwithdebinfo",
-        "conf-unixlike-ubsan-common"
+        "conf-gcc-relwithdebinfo",
+        "conf-ubsan-common"
       ]
     },
     {
-      "name": "conf-unixlike-gcc-coverage",
+      "name": "conf-gcc-coverage",
       "displayName": "gcc Coverage",
       "description": "Debug build with code coverage instrumentation for lcov/gcov",
       "inherits": [
-        "conf-unixlike-gcc-debug",
-        "conf-unixlike-coverage-common"
+        "conf-gcc-debug",
+        "conf-coverage-common"
       ]
     },
     {
-      "name": "conf-unixlike-clang-debug-asan",
+      "name": "conf-clang-debug-asan",
       "displayName": "clang Debug + AddressSanitizer",
       "description": "Debug build with AddressSanitizer for memory error detection",
       "inherits": [
-        "conf-unixlike-clang-debug",
-        "conf-unixlike-asan-common"
+        "conf-clang-debug",
+        "conf-asan-common"
       ],
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-stdlib=libstdc++ -fsanitize=address -fno-omit-frame-pointer -g"
       }
     },
     {
-      "name": "conf-unixlike-clang-debug-tsan",
+      "name": "conf-clang-debug-tsan",
       "displayName": "clang Debug + ThreadSanitizer",
       "description": "Debug build with ThreadSanitizer for data race detection",
       "inherits": [
-        "conf-unixlike-clang-debug",
-        "conf-unixlike-tsan-common"
+        "conf-clang-debug",
+        "conf-tsan-common"
       ],
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-stdlib=libstdc++ -fsanitize=thread -g"
       }
     },
     {
-      "name": "conf-unixlike-clang-debug-ubsan",
+      "name": "conf-clang-debug-ubsan",
       "displayName": "clang Debug + UndefinedBehaviorSanitizer",
       "description": "Debug build with UndefinedBehaviorSanitizer for undefined behavior detection",
       "inherits": [
-        "conf-unixlike-clang-debug",
-        "conf-unixlike-ubsan-common"
+        "conf-clang-debug",
+        "conf-ubsan-common"
       ],
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-stdlib=libstdc++ -fsanitize=undefined -fno-omit-frame-pointer -g"
       }
     },
     {
-      "name": "conf-unixlike-clang-relwithdebinfo-asan",
+      "name": "conf-clang-relwithdebinfo-asan",
       "displayName": "clang RelWithDebInfo + AddressSanitizer",
       "description": "RelWithDebInfo build with AddressSanitizer for memory error detection",
       "inherits": [
-        "conf-unixlike-clang-relwithdebinfo",
-        "conf-unixlike-asan-common"
+        "conf-clang-relwithdebinfo",
+        "conf-asan-common"
       ],
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-stdlib=libstdc++ -fsanitize=address -fno-omit-frame-pointer -g"
       }
     },
     {
-      "name": "conf-unixlike-clang-relwithdebinfo-tsan",
+      "name": "conf-clang-relwithdebinfo-tsan",
       "displayName": "clang RelWithDebInfo + ThreadSanitizer",
       "description": "RelWithDebInfo build with ThreadSanitizer for data race detection",
       "inherits": [
-        "conf-unixlike-clang-relwithdebinfo",
-        "conf-unixlike-tsan-common"
+        "conf-clang-relwithdebinfo",
+        "conf-tsan-common"
       ],
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-stdlib=libstdc++ -fsanitize=thread -g"
       }
     },
     {
-      "name": "conf-unixlike-clang-relwithdebinfo-ubsan",
+      "name": "conf-clang-relwithdebinfo-ubsan",
       "displayName": "clang RelWithDebInfo + UndefinedBehaviorSanitizer",
       "description": "RelWithDebInfo build with UndefinedBehaviorSanitizer for undefined behavior detection",
       "inherits": [
-        "conf-unixlike-clang-relwithdebinfo",
-        "conf-unixlike-ubsan-common"
+        "conf-clang-relwithdebinfo",
+        "conf-ubsan-common"
       ],
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-stdlib=libstdc++ -fsanitize=undefined -fno-omit-frame-pointer -g"
@@ -524,195 +524,195 @@
       "configuration": "MinSizeRel"
     },
     {
-      "name": "build-windows-msvc-debug",
+      "name": "build-msvc-debug",
       "inherits": "build-debug",
-      "configurePreset": "conf-windows-msvc-debug",
+      "configurePreset": "conf-msvc-debug",
       "displayName": "msvc Debug Build"
     },
     {
-      "name": "build-windows-msvc-release",
+      "name": "build-msvc-release",
       "inherits": "build-release",
-      "configurePreset": "conf-windows-msvc-release",
+      "configurePreset": "conf-msvc-release",
       "displayName": "msvc Release Build"
     },
     {
-      "name": "build-windows-msvc-relwithdebinfo",
+      "name": "build-msvc-relwithdebinfo",
       "inherits": "build-relwithdebinfo",
-      "configurePreset": "conf-windows-msvc-relwithdebinfo",
+      "configurePreset": "conf-msvc-relwithdebinfo",
       "displayName": "msvc RelWithDebInfo Build"
     },
     {
-      "name": "build-windows-msvc-minsizerel",
+      "name": "build-msvc-minsizerel",
       "inherits": "build-minsizerel",
-      "configurePreset": "conf-windows-msvc-minsizerel",
+      "configurePreset": "conf-msvc-minsizerel",
       "displayName": "msvc MinSizeRel Build"
     },
     {
-      "name": "build-windows-msvc-release-shared",
+      "name": "build-msvc-release-shared",
       "inherits": "build-release",
-      "configurePreset": "conf-windows-msvc-release-shared",
+      "configurePreset": "conf-msvc-release-shared",
       "displayName": "msvc Release Build (Shared)"
     },
     {
-      "name": "build-windows-msvc-release-static",
+      "name": "build-msvc-release-static",
       "inherits": "build-release",
-      "configurePreset": "conf-windows-msvc-release-static",
+      "configurePreset": "conf-msvc-release-static",
       "displayName": "msvc Release Build (Static)"
     },
     {
-      "name": "build-unixlike-gcc-debug",
+      "name": "build-gcc-debug",
       "inherits": "build-debug",
-      "configurePreset": "conf-unixlike-gcc-debug",
+      "configurePreset": "conf-gcc-debug",
       "displayName": "gcc Debug Build"
     },
     {
-      "name": "build-unixlike-gcc-relwithdebinfo",
+      "name": "build-gcc-relwithdebinfo",
       "inherits": "build-relwithdebinfo",
-      "configurePreset": "conf-unixlike-gcc-relwithdebinfo",
+      "configurePreset": "conf-gcc-relwithdebinfo",
       "displayName": "gcc RelWithDebInfo Build"
     },
     {
-      "name": "build-unixlike-gcc-minsizerel",
+      "name": "build-gcc-minsizerel",
       "inherits": "build-minsizerel",
-      "configurePreset": "conf-unixlike-gcc-minsizerel",
+      "configurePreset": "conf-gcc-minsizerel",
       "displayName": "gcc MinSizeRel Build"
     },
     {
-      "name": "build-unixlike-gcc-release",
+      "name": "build-gcc-release",
       "inherits": "build-release",
-      "configurePreset": "conf-unixlike-gcc-release",
+      "configurePreset": "conf-gcc-release",
       "displayName": "gcc Release Build"
     },
     {
-      "name": "build-unixlike-gcc-release-shared",
+      "name": "build-gcc-release-shared",
       "inherits": "build-release",
-      "configurePreset": "conf-unixlike-gcc-release-shared",
+      "configurePreset": "conf-gcc-release-shared",
       "displayName": "gcc Release Build (Shared)"
     },
     {
-      "name": "build-unixlike-gcc-release-static",
+      "name": "build-gcc-release-static",
       "inherits": "build-release",
-      "configurePreset": "conf-unixlike-gcc-release-static",
+      "configurePreset": "conf-gcc-release-static",
       "displayName": "gcc Release Build (Static)"
     },
     {
-      "name": "build-unixlike-clang-debug",
+      "name": "build-clang-debug",
       "inherits": "build-debug",
-      "configurePreset": "conf-unixlike-clang-debug",
+      "configurePreset": "conf-clang-debug",
       "displayName": "clang Debug Build"
     },
     {
-      "name": "build-unixlike-clang-relwithdebinfo",
+      "name": "build-clang-relwithdebinfo",
       "inherits": "build-relwithdebinfo",
-      "configurePreset": "conf-unixlike-clang-relwithdebinfo",
+      "configurePreset": "conf-clang-relwithdebinfo",
       "displayName": "clang RelWithDebInfo Build"
     },
     {
-      "name": "build-unixlike-clang-minsizerel",
+      "name": "build-clang-minsizerel",
       "inherits": "build-minsizerel",
-      "configurePreset": "conf-unixlike-clang-minsizerel",
+      "configurePreset": "conf-clang-minsizerel",
       "displayName": "clang MinSizeRel Build"
     },
     {
-      "name": "build-unixlike-clang-release",
+      "name": "build-clang-release",
       "inherits": "build-release",
-      "configurePreset": "conf-unixlike-clang-release",
+      "configurePreset": "conf-clang-release",
       "displayName": "clang Release Build"
     },
     {
-      "name": "build-unixlike-clang-release-shared",
+      "name": "build-clang-release-shared",
       "inherits": "build-release",
-      "configurePreset": "conf-unixlike-clang-release-shared",
+      "configurePreset": "conf-clang-release-shared",
       "displayName": "clang Release Build (Shared)"
     },
     {
-      "name": "build-unixlike-clang-release-static",
+      "name": "build-clang-release-static",
       "inherits": "build-release",
-      "configurePreset": "conf-unixlike-clang-release-static",
+      "configurePreset": "conf-clang-release-static",
       "displayName": "clang Release Build (Static)"
     },
     {
-      "name": "build-unixlike-gcc-debug-asan",
+      "name": "build-gcc-debug-asan",
       "inherits": "build-debug",
-      "configurePreset": "conf-unixlike-gcc-debug-asan",
+      "configurePreset": "conf-gcc-debug-asan",
       "displayName": "gcc Debug + ASAN Build"
     },
     {
-      "name": "build-unixlike-gcc-debug-tsan",
+      "name": "build-gcc-debug-tsan",
       "inherits": "build-debug",
-      "configurePreset": "conf-unixlike-gcc-debug-tsan",
+      "configurePreset": "conf-gcc-debug-tsan",
       "displayName": "gcc Debug + TSAN Build"
     },
     {
-      "name": "build-unixlike-gcc-debug-ubsan",
+      "name": "build-gcc-debug-ubsan",
       "inherits": "build-debug",
-      "configurePreset": "conf-unixlike-gcc-debug-ubsan",
+      "configurePreset": "conf-gcc-debug-ubsan",
       "displayName": "gcc Debug + UBSAN Build"
     },
     {
-      "name": "build-unixlike-clang-debug-asan",
+      "name": "build-clang-debug-asan",
       "inherits": "build-debug",
-      "configurePreset": "conf-unixlike-clang-debug-asan",
+      "configurePreset": "conf-clang-debug-asan",
       "displayName": "clang Debug + ASAN Build"
     },
     {
-      "name": "build-unixlike-clang-debug-tsan",
+      "name": "build-clang-debug-tsan",
       "inherits": "build-debug",
-      "configurePreset": "conf-unixlike-clang-debug-tsan",
+      "configurePreset": "conf-clang-debug-tsan",
       "displayName": "clang Debug + TSAN Build"
     },
     {
-      "name": "build-unixlike-clang-debug-ubsan",
+      "name": "build-clang-debug-ubsan",
       "inherits": "build-debug",
-      "configurePreset": "conf-unixlike-clang-debug-ubsan",
+      "configurePreset": "conf-clang-debug-ubsan",
       "displayName": "clang Debug + UBSAN Build"
     },
     {
-      "name": "build-unixlike-gcc-relwithdebinfo-asan",
+      "name": "build-gcc-relwithdebinfo-asan",
       "inherits": "build-relwithdebinfo",
-      "configurePreset": "conf-unixlike-gcc-relwithdebinfo-asan",
+      "configurePreset": "conf-gcc-relwithdebinfo-asan",
       "displayName": "gcc RelWithDebInfo + ASAN Build"
     },
     {
-      "name": "build-unixlike-gcc-relwithdebinfo-tsan",
+      "name": "build-gcc-relwithdebinfo-tsan",
       "inherits": "build-relwithdebinfo",
-      "configurePreset": "conf-unixlike-gcc-relwithdebinfo-tsan",
+      "configurePreset": "conf-gcc-relwithdebinfo-tsan",
       "displayName": "gcc RelWithDebInfo + TSAN Build"
     },
     {
-      "name": "build-unixlike-gcc-relwithdebinfo-ubsan",
+      "name": "build-gcc-relwithdebinfo-ubsan",
       "inherits": "build-relwithdebinfo",
-      "configurePreset": "conf-unixlike-gcc-relwithdebinfo-ubsan",
+      "configurePreset": "conf-gcc-relwithdebinfo-ubsan",
       "displayName": "gcc RelWithDebInfo + UBSAN Build"
     },
     {
-      "name": "build-unixlike-clang-relwithdebinfo-asan",
+      "name": "build-clang-relwithdebinfo-asan",
       "inherits": "build-relwithdebinfo",
-      "configurePreset": "conf-unixlike-clang-relwithdebinfo-asan",
+      "configurePreset": "conf-clang-relwithdebinfo-asan",
       "displayName": "clang RelWithDebInfo + ASAN Build"
     },
     {
-      "name": "build-unixlike-clang-relwithdebinfo-tsan",
+      "name": "build-clang-relwithdebinfo-tsan",
       "inherits": "build-relwithdebinfo",
-      "configurePreset": "conf-unixlike-clang-relwithdebinfo-tsan",
+      "configurePreset": "conf-clang-relwithdebinfo-tsan",
       "displayName": "clang RelWithDebInfo + TSAN Build"
     },
     {
-      "name": "build-unixlike-clang-relwithdebinfo-ubsan",
+      "name": "build-clang-relwithdebinfo-ubsan",
       "inherits": "build-relwithdebinfo",
-      "configurePreset": "conf-unixlike-clang-relwithdebinfo-ubsan",
+      "configurePreset": "conf-clang-relwithdebinfo-ubsan",
       "displayName": "clang RelWithDebInfo + UBSAN Build"
     },
     {
-      "name": "build-unixlike-gcc-coverage",
+      "name": "build-gcc-coverage",
       "inherits": "build-debug",
-      "configurePreset": "conf-unixlike-gcc-coverage",
+      "configurePreset": "conf-gcc-coverage",
       "displayName": "gcc Coverage Build"
     },
     {
-      "name": "build-unixlike-gcc-coverage-report",
+      "name": "build-gcc-coverage-report",
       "inherits": "build-debug",
-      "configurePreset": "conf-unixlike-gcc-coverage",
+      "configurePreset": "conf-gcc-coverage",
       "displayName": "Generate Coverage Report",
       "targets": ["coverage-report"]
     }
@@ -775,328 +775,328 @@
       }
     },
     {
-      "name": "test-unixlike-common",
+      "name": "test-unix-common",
       "displayName": "Strict",
       "description": "Enable output and stop on failure",
       "hidden": true,
       "inherits": "test-common"
     },
     {
-      "name": "test-windows-msvc-common",
+      "name": "test-msvc-common",
       "displayName": "Strict",
       "description": "Enable output and stop on failure",
       "hidden": true,
       "inherits": "test-common"
     },
     {
-      "name": "test-windows-msvc-debug",
+      "name": "test-msvc-debug",
       "displayName": "msvc Debug Tests",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-windows-msvc-common",
+        "test-msvc-common",
         "test-debug"
       ],
-      "configurePreset": "conf-windows-msvc-debug"
+      "configurePreset": "conf-msvc-debug"
     },
     {
-      "name": "test-windows-msvc-release",
+      "name": "test-msvc-release",
       "displayName": "msvc Release Tests",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-windows-msvc-common",
+        "test-msvc-common",
         "test-release"
       ],
-      "configurePreset": "conf-windows-msvc-release"
+      "configurePreset": "conf-msvc-release"
     },
     {
-      "name": "test-windows-msvc-relwithdebinfo",
+      "name": "test-msvc-relwithdebinfo",
       "displayName": "msvc RelWithDebInfo Tests",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-windows-msvc-common",
+        "test-msvc-common",
         "test-relwithdebinfo"
       ],
-      "configurePreset": "conf-windows-msvc-relwithdebinfo"
+      "configurePreset": "conf-msvc-relwithdebinfo"
     },
     {
-      "name": "test-windows-msvc-minsizerel",
+      "name": "test-msvc-minsizerel",
       "displayName": "msvc MinSizeRel Tests",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-windows-msvc-common",
+        "test-msvc-common",
         "test-minsizerel"
       ],
-      "configurePreset": "conf-windows-msvc-minsizerel"
+      "configurePreset": "conf-msvc-minsizerel"
     },
     {
-      "name": "test-windows-msvc-release-shared",
+      "name": "test-msvc-release-shared",
       "displayName": "msvc Release Tests (Shared)",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-windows-msvc-common",
+        "test-msvc-common",
         "test-release"
       ],
-      "configurePreset": "conf-windows-msvc-release-shared"
+      "configurePreset": "conf-msvc-release-shared"
     },
     {
-      "name": "test-windows-msvc-release-static",
+      "name": "test-msvc-release-static",
       "displayName": "msvc Release Tests (Static)",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-windows-msvc-common",
+        "test-msvc-common",
         "test-release"
       ],
-      "configurePreset": "conf-windows-msvc-release-static"
+      "configurePreset": "conf-msvc-release-static"
     },
     {
-      "name": "test-unixlike-gcc-debug",
+      "name": "test-gcc-debug",
       "displayName": "gcc Debug Tests",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-debug"
       ],
-      "configurePreset": "conf-unixlike-gcc-debug"
+      "configurePreset": "conf-gcc-debug"
     },
     {
-      "name": "test-unixlike-gcc-relwithdebinfo",
+      "name": "test-gcc-relwithdebinfo",
       "displayName": "gcc RelWithDebInfo Tests",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-relwithdebinfo"
       ],
-      "configurePreset": "conf-unixlike-gcc-relwithdebinfo"
+      "configurePreset": "conf-gcc-relwithdebinfo"
     },
     {
-      "name": "test-unixlike-gcc-minsizerel",
+      "name": "test-gcc-minsizerel",
       "displayName": "gcc MinSizeRel Tests",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-minsizerel"
       ],
-      "configurePreset": "conf-unixlike-gcc-minsizerel"
+      "configurePreset": "conf-gcc-minsizerel"
     },
     {
-      "name": "test-unixlike-gcc-release",
+      "name": "test-gcc-release",
       "displayName": "gcc Release Tests",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-release"
       ],
-      "configurePreset": "conf-unixlike-gcc-release"
+      "configurePreset": "conf-gcc-release"
     },
     {
-      "name": "test-unixlike-gcc-release-shared",
+      "name": "test-gcc-release-shared",
       "displayName": "gcc Release Tests (Shared)",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-release"
       ],
-      "configurePreset": "conf-unixlike-gcc-release-shared"
+      "configurePreset": "conf-gcc-release-shared"
     },
     {
-      "name": "test-unixlike-gcc-release-static",
+      "name": "test-gcc-release-static",
       "displayName": "gcc Release Tests (Static)",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-release"
       ],
-      "configurePreset": "conf-unixlike-gcc-release-static"
+      "configurePreset": "conf-gcc-release-static"
     },
     {
-      "name": "test-unixlike-clang-debug",
+      "name": "test-clang-debug",
       "displayName": "clang Debug Tests",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-debug"
       ],
-      "configurePreset": "conf-unixlike-clang-debug"
+      "configurePreset": "conf-clang-debug"
     },
     {
-      "name": "test-unixlike-clang-relwithdebinfo",
+      "name": "test-clang-relwithdebinfo",
       "displayName": "clang RelWithDebInfo Tests",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-relwithdebinfo"
       ],
-      "configurePreset": "conf-unixlike-clang-relwithdebinfo"
+      "configurePreset": "conf-clang-relwithdebinfo"
     },
     {
-      "name": "test-unixlike-clang-minsizerel",
+      "name": "test-clang-minsizerel",
       "displayName": "clang MinSizeRel Tests",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-minsizerel"
       ],
-      "configurePreset": "conf-unixlike-clang-minsizerel"
+      "configurePreset": "conf-clang-minsizerel"
     },
     {
-      "name": "test-unixlike-clang-release",
+      "name": "test-clang-release",
       "displayName": "clang Release Tests",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-release"
       ],
-      "configurePreset": "conf-unixlike-clang-release"
+      "configurePreset": "conf-clang-release"
     },
     {
-      "name": "test-unixlike-clang-release-shared",
+      "name": "test-clang-release-shared",
       "displayName": "clang Release Tests (Shared)",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-release"
       ],
-      "configurePreset": "conf-unixlike-clang-release-shared"
+      "configurePreset": "conf-clang-release-shared"
     },
     {
-      "name": "test-unixlike-clang-release-static",
+      "name": "test-clang-release-static",
       "displayName": "clang Release Tests (Static)",
       "description": "Enable output and stop on failure",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-release"
       ],
-      "configurePreset": "conf-unixlike-clang-release-static"
+      "configurePreset": "conf-clang-release-static"
     },
     {
-      "name": "test-unixlike-gcc-debug-asan",
+      "name": "test-gcc-debug-asan",
       "displayName": "gcc Debug + ASAN Tests",
       "description": "Tests with AddressSanitizer enabled",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-debug"
       ],
-      "configurePreset": "conf-unixlike-gcc-debug-asan"
+      "configurePreset": "conf-gcc-debug-asan"
     },
     {
-      "name": "test-unixlike-gcc-debug-tsan",
+      "name": "test-gcc-debug-tsan",
       "displayName": "gcc Debug + TSAN Tests",
       "description": "Tests with ThreadSanitizer enabled",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-debug"
       ],
-      "configurePreset": "conf-unixlike-gcc-debug-tsan"
+      "configurePreset": "conf-gcc-debug-tsan"
     },
     {
-      "name": "test-unixlike-gcc-debug-ubsan",
+      "name": "test-gcc-debug-ubsan",
       "displayName": "gcc Debug + UBSAN Tests",
       "description": "Tests with UndefinedBehaviorSanitizer enabled",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-debug"
       ],
-      "configurePreset": "conf-unixlike-gcc-debug-ubsan"
+      "configurePreset": "conf-gcc-debug-ubsan"
     },
     {
-      "name": "test-unixlike-clang-debug-asan",
+      "name": "test-clang-debug-asan",
       "displayName": "clang Debug + ASAN Tests",
       "description": "Tests with AddressSanitizer enabled",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-debug"
       ],
-      "configurePreset": "conf-unixlike-clang-debug-asan"
+      "configurePreset": "conf-clang-debug-asan"
     },
     {
-      "name": "test-unixlike-clang-debug-tsan",
+      "name": "test-clang-debug-tsan",
       "displayName": "clang Debug + TSAN Tests",
       "description": "Tests with ThreadSanitizer enabled",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-debug"
       ],
-      "configurePreset": "conf-unixlike-clang-debug-tsan"
+      "configurePreset": "conf-clang-debug-tsan"
     },
     {
-      "name": "test-unixlike-clang-debug-ubsan",
+      "name": "test-clang-debug-ubsan",
       "displayName": "clang Debug + UBSAN Tests",
       "description": "Tests with UndefinedBehaviorSanitizer enabled",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-debug"
       ],
-      "configurePreset": "conf-unixlike-clang-debug-ubsan"
+      "configurePreset": "conf-clang-debug-ubsan"
     },
     {
-      "name": "test-unixlike-gcc-relwithdebinfo-asan",
+      "name": "test-gcc-relwithdebinfo-asan",
       "displayName": "gcc RelWithDebInfo + ASAN Tests",
       "description": "Tests with AddressSanitizer enabled",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-relwithdebinfo"
       ],
-      "configurePreset": "conf-unixlike-gcc-relwithdebinfo-asan"
+      "configurePreset": "conf-gcc-relwithdebinfo-asan"
     },
     {
-      "name": "test-unixlike-gcc-relwithdebinfo-tsan",
+      "name": "test-gcc-relwithdebinfo-tsan",
       "displayName": "gcc RelWithDebInfo + TSAN Tests",
       "description": "Tests with ThreadSanitizer enabled",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-relwithdebinfo"
       ],
-      "configurePreset": "conf-unixlike-gcc-relwithdebinfo-tsan"
+      "configurePreset": "conf-gcc-relwithdebinfo-tsan"
     },
     {
-      "name": "test-unixlike-gcc-relwithdebinfo-ubsan",
+      "name": "test-gcc-relwithdebinfo-ubsan",
       "displayName": "gcc RelWithDebInfo + UBSAN Tests",
       "description": "Tests with UndefinedBehaviorSanitizer enabled",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-relwithdebinfo"
       ],
-      "configurePreset": "conf-unixlike-gcc-relwithdebinfo-ubsan"
+      "configurePreset": "conf-gcc-relwithdebinfo-ubsan"
     },
     {
-      "name": "test-unixlike-clang-relwithdebinfo-asan",
+      "name": "test-clang-relwithdebinfo-asan",
       "displayName": "clang RelWithDebInfo + ASAN Tests",
       "description": "Tests with AddressSanitizer enabled",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-relwithdebinfo"
       ],
-      "configurePreset": "conf-unixlike-clang-relwithdebinfo-asan"
+      "configurePreset": "conf-clang-relwithdebinfo-asan"
     },
     {
-      "name": "test-unixlike-clang-relwithdebinfo-tsan",
+      "name": "test-clang-relwithdebinfo-tsan",
       "displayName": "clang RelWithDebInfo + TSAN Tests",
       "description": "Tests with ThreadSanitizer enabled",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-relwithdebinfo"
       ],
-      "configurePreset": "conf-unixlike-clang-relwithdebinfo-tsan"
+      "configurePreset": "conf-clang-relwithdebinfo-tsan"
     },
     {
-      "name": "test-unixlike-clang-relwithdebinfo-ubsan",
+      "name": "test-clang-relwithdebinfo-ubsan",
       "displayName": "clang RelWithDebInfo + UBSAN Tests",
       "description": "Tests with UndefinedBehaviorSanitizer enabled",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-relwithdebinfo"
       ],
-      "configurePreset": "conf-unixlike-clang-relwithdebinfo-ubsan"
+      "configurePreset": "conf-clang-relwithdebinfo-ubsan"
     },
     {
-      "name": "test-unixlike-gcc-coverage",
+      "name": "test-gcc-coverage",
       "displayName": "gcc Coverage Tests",
       "description": "Run tests with coverage instrumentation",
       "inherits": [
-        "test-unixlike-common",
+        "test-unix-common",
         "test-debug"
       ],
-      "configurePreset": "conf-unixlike-gcc-coverage"
+      "configurePreset": "conf-gcc-coverage"
     }
   ],
   "packagePresets": [
@@ -1119,7 +1119,7 @@
       ]
     },
     {
-      "name": "package-windows-common",
+      "name": "package-msvc-common",
       "description": "Common Windows package settings",
       "hidden": true,
       "inherits": "package-common",
@@ -1129,7 +1129,7 @@
       ]
     },
     {
-      "name": "package-unixlike-common",
+      "name": "package-unix-common",
       "description": "Common Unix-like package settings",
       "hidden": true,
       "inherits": "package-common",
@@ -1139,86 +1139,86 @@
       ]
     },
     {
-      "name": "package-windows-msvc-release",
+      "name": "package-msvc-release",
       "displayName": "Windows Release Package",
       "description": "Create ZIP packages on Windows",
       "inherits": [
-        "package-windows-common",
+        "package-msvc-common",
         "package-release"
       ],
-      "configurePreset": "conf-windows-msvc-release"
+      "configurePreset": "conf-msvc-release"
     },
     {
-      "name": "package-windows-msvc-release-nsis",
+      "name": "package-msvc-release-nsis",
       "displayName": "Windows NSIS Installer Package",
       "description": "Create NSIS installer on Windows",
       "inherits": [
         "package-release"
       ],
-      "configurePreset": "conf-windows-msvc-release",
+      "configurePreset": "conf-msvc-release",
       "generators": [
         "NSIS"
       ]
     },
     {
-      "name": "package-unixlike-gcc-release",
+      "name": "package-gcc-release",
       "displayName": "Unix GCC Release Package",
       "description": "Create TGZ and DEB packages on Unix-like systems with GCC",
       "inherits": [
-        "package-unixlike-common",
+        "package-unix-common",
         "package-release"
       ],
-      "configurePreset": "conf-unixlike-gcc-release"
+      "configurePreset": "conf-gcc-release"
     },
     {
-      "name": "package-unixlike-clang-release",
+      "name": "package-clang-release",
       "displayName": "Unix Clang Release Package",
       "description": "Create TGZ and DEB packages on Unix-like systems with Clang",
       "inherits": [
-        "package-unixlike-common",
+        "package-unix-common",
         "package-release"
       ],
-      "configurePreset": "conf-unixlike-clang-release"
+      "configurePreset": "conf-clang-release"
     },
     {
-      "name": "package-unixlike-gcc-release-shared",
+      "name": "package-gcc-release-shared",
       "displayName": "Unix GCC Release Package (Shared)",
       "description": "Create TGZ and DEB packages for shared libraries with GCC",
       "inherits": [
-        "package-unixlike-common",
+        "package-unix-common",
         "package-release"
       ],
-      "configurePreset": "conf-unixlike-gcc-release-shared"
+      "configurePreset": "conf-gcc-release-shared"
     },
     {
-      "name": "package-unixlike-gcc-release-static",
+      "name": "package-gcc-release-static",
       "displayName": "Unix GCC Release Package (Static)",
       "description": "Create TGZ and DEB packages for static libraries with GCC",
       "inherits": [
-        "package-unixlike-common",
+        "package-unix-common",
         "package-release"
       ],
-      "configurePreset": "conf-unixlike-gcc-release-static"
+      "configurePreset": "conf-gcc-release-static"
     },
     {
-      "name": "package-windows-msvc-release-shared",
+      "name": "package-msvc-release-shared",
       "displayName": "Windows Release Package (Shared)",
       "description": "Create ZIP and NSIS packages for shared libraries on Windows",
       "inherits": [
-        "package-windows-common",
+        "package-msvc-common",
         "package-release"
       ],
-      "configurePreset": "conf-windows-msvc-release-shared"
+      "configurePreset": "conf-msvc-release-shared"
     },
     {
-      "name": "package-windows-msvc-release-static",
+      "name": "package-msvc-release-static",
       "displayName": "Windows Release Package (Static)",
       "description": "Create ZIP and NSIS packages for static libraries on Windows",
       "inherits": [
-        "package-windows-common",
+        "package-msvc-common",
         "package-release"
       ],
-      "configurePreset": "conf-windows-msvc-release-static"
+      "configurePreset": "conf-msvc-release-static"
     }
   ],
   "workflowPresets": [
@@ -1229,15 +1229,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-clang-debug"
+          "name": "conf-clang-debug"
         },
         {
           "type": "build",
-          "name": "build-unixlike-clang-debug"
+          "name": "build-clang-debug"
         },
         {
           "type": "test",
-          "name": "test-unixlike-clang-debug"
+          "name": "test-clang-debug"
         }
       ]
     },
@@ -1248,15 +1248,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-clang-release"
+          "name": "conf-clang-release"
         },
         {
           "type": "build",
-          "name": "build-unixlike-clang-release"
+          "name": "build-clang-release"
         },
         {
           "type": "test",
-          "name": "test-unixlike-clang-release"
+          "name": "test-clang-release"
         }
       ]
     },
@@ -1267,15 +1267,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-clang-relwithdebinfo"
+          "name": "conf-clang-relwithdebinfo"
         },
         {
           "type": "build",
-          "name": "build-unixlike-clang-relwithdebinfo"
+          "name": "build-clang-relwithdebinfo"
         },
         {
           "type": "test",
-          "name": "test-unixlike-clang-relwithdebinfo"
+          "name": "test-clang-relwithdebinfo"
         }
       ]
     },
@@ -1286,15 +1286,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-clang-minsizerel"
+          "name": "conf-clang-minsizerel"
         },
         {
           "type": "build",
-          "name": "build-unixlike-clang-minsizerel"
+          "name": "build-clang-minsizerel"
         },
         {
           "type": "test",
-          "name": "test-unixlike-clang-minsizerel"
+          "name": "test-clang-minsizerel"
         }
       ]
     },
@@ -1305,15 +1305,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-debug"
+          "name": "conf-gcc-debug"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-debug"
+          "name": "build-gcc-debug"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-debug"
+          "name": "test-gcc-debug"
         }
       ]
     },
@@ -1324,15 +1324,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-release"
+          "name": "conf-gcc-release"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-release"
+          "name": "build-gcc-release"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-release"
+          "name": "test-gcc-release"
         }
       ]
     },
@@ -1343,15 +1343,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-relwithdebinfo"
+          "name": "conf-gcc-relwithdebinfo"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-relwithdebinfo"
+          "name": "build-gcc-relwithdebinfo"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-relwithdebinfo"
+          "name": "test-gcc-relwithdebinfo"
         }
       ]
     },
@@ -1362,15 +1362,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-minsizerel"
+          "name": "conf-gcc-minsizerel"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-minsizerel"
+          "name": "build-gcc-minsizerel"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-minsizerel"
+          "name": "test-gcc-minsizerel"
         }
       ]
     },
@@ -1381,15 +1381,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-windows-msvc-debug"
+          "name": "conf-msvc-debug"
         },
         {
           "type": "build",
-          "name": "build-windows-msvc-debug"
+          "name": "build-msvc-debug"
         },
         {
           "type": "test",
-          "name": "test-windows-msvc-debug"
+          "name": "test-msvc-debug"
         }
       ]
     },
@@ -1400,15 +1400,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-windows-msvc-release"
+          "name": "conf-msvc-release"
         },
         {
           "type": "build",
-          "name": "build-windows-msvc-release"
+          "name": "build-msvc-release"
         },
         {
           "type": "test",
-          "name": "test-windows-msvc-release"
+          "name": "test-msvc-release"
         }
       ]
     },
@@ -1419,15 +1419,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-windows-msvc-relwithdebinfo"
+          "name": "conf-msvc-relwithdebinfo"
         },
         {
           "type": "build",
-          "name": "build-windows-msvc-relwithdebinfo"
+          "name": "build-msvc-relwithdebinfo"
         },
         {
           "type": "test",
-          "name": "test-windows-msvc-relwithdebinfo"
+          "name": "test-msvc-relwithdebinfo"
         }
       ]
     },
@@ -1438,15 +1438,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-windows-msvc-minsizerel"
+          "name": "conf-msvc-minsizerel"
         },
         {
           "type": "build",
-          "name": "build-windows-msvc-minsizerel"
+          "name": "build-msvc-minsizerel"
         },
         {
           "type": "test",
-          "name": "test-windows-msvc-minsizerel"
+          "name": "test-msvc-minsizerel"
         }
       ]
     },
@@ -1457,19 +1457,19 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-clang-release"
+          "name": "conf-clang-release"
         },
         {
           "type": "build",
-          "name": "build-unixlike-clang-release"
+          "name": "build-clang-release"
         },
         {
           "type": "test",
-          "name": "test-unixlike-clang-release"
+          "name": "test-clang-release"
         },
         {
           "type": "package",
-          "name": "package-unixlike-clang-release"
+          "name": "package-clang-release"
         }
       ]
     },
@@ -1480,19 +1480,19 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-release"
+          "name": "conf-gcc-release"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-release"
+          "name": "build-gcc-release"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-release"
+          "name": "test-gcc-release"
         },
         {
           "type": "package",
-          "name": "package-unixlike-gcc-release"
+          "name": "package-gcc-release"
         }
       ]
     },
@@ -1503,19 +1503,19 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-release-shared"
+          "name": "conf-gcc-release-shared"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-release-shared"
+          "name": "build-gcc-release-shared"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-release-shared"
+          "name": "test-gcc-release-shared"
         },
         {
           "type": "package",
-          "name": "package-unixlike-gcc-release-shared"
+          "name": "package-gcc-release-shared"
         }
       ]
     },
@@ -1526,19 +1526,19 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-release-static"
+          "name": "conf-gcc-release-static"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-release-static"
+          "name": "build-gcc-release-static"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-release-static"
+          "name": "test-gcc-release-static"
         },
         {
           "type": "package",
-          "name": "package-unixlike-gcc-release-static"
+          "name": "package-gcc-release-static"
         }
       ]
     },
@@ -1549,19 +1549,19 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-windows-msvc-release"
+          "name": "conf-msvc-release"
         },
         {
           "type": "build",
-          "name": "build-windows-msvc-release"
+          "name": "build-msvc-release"
         },
         {
           "type": "test",
-          "name": "test-windows-msvc-release"
+          "name": "test-msvc-release"
         },
         {
           "type": "package",
-          "name": "package-windows-msvc-release"
+          "name": "package-msvc-release"
         }
       ]
     },
@@ -1572,19 +1572,19 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-windows-msvc-release-shared"
+          "name": "conf-msvc-release-shared"
         },
         {
           "type": "build",
-          "name": "build-windows-msvc-release-shared"
+          "name": "build-msvc-release-shared"
         },
         {
           "type": "test",
-          "name": "test-windows-msvc-release-shared"
+          "name": "test-msvc-release-shared"
         },
         {
           "type": "package",
-          "name": "package-windows-msvc-release-shared"
+          "name": "package-msvc-release-shared"
         }
       ]
     },
@@ -1595,19 +1595,19 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-windows-msvc-release-static"
+          "name": "conf-msvc-release-static"
         },
         {
           "type": "build",
-          "name": "build-windows-msvc-release-static"
+          "name": "build-msvc-release-static"
         },
         {
           "type": "test",
-          "name": "test-windows-msvc-release-static"
+          "name": "test-msvc-release-static"
         },
         {
           "type": "package",
-          "name": "package-windows-msvc-release-static"
+          "name": "package-msvc-release-static"
         }
       ]
     },
@@ -1618,15 +1618,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-debug-asan"
+          "name": "conf-gcc-debug-asan"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-debug-asan"
+          "name": "build-gcc-debug-asan"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-debug-asan"
+          "name": "test-gcc-debug-asan"
         }
       ]
     },
@@ -1637,15 +1637,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-debug-tsan"
+          "name": "conf-gcc-debug-tsan"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-debug-tsan"
+          "name": "build-gcc-debug-tsan"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-debug-tsan"
+          "name": "test-gcc-debug-tsan"
         }
       ]
     },
@@ -1656,15 +1656,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-debug-ubsan"
+          "name": "conf-gcc-debug-ubsan"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-debug-ubsan"
+          "name": "build-gcc-debug-ubsan"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-debug-ubsan"
+          "name": "test-gcc-debug-ubsan"
         }
       ]
     },
@@ -1675,15 +1675,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-clang-debug-asan"
+          "name": "conf-clang-debug-asan"
         },
         {
           "type": "build",
-          "name": "build-unixlike-clang-debug-asan"
+          "name": "build-clang-debug-asan"
         },
         {
           "type": "test",
-          "name": "test-unixlike-clang-debug-asan"
+          "name": "test-clang-debug-asan"
         }
       ]
     },
@@ -1694,15 +1694,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-clang-debug-tsan"
+          "name": "conf-clang-debug-tsan"
         },
         {
           "type": "build",
-          "name": "build-unixlike-clang-debug-tsan"
+          "name": "build-clang-debug-tsan"
         },
         {
           "type": "test",
-          "name": "test-unixlike-clang-debug-tsan"
+          "name": "test-clang-debug-tsan"
         }
       ]
     },
@@ -1713,15 +1713,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-clang-debug-ubsan"
+          "name": "conf-clang-debug-ubsan"
         },
         {
           "type": "build",
-          "name": "build-unixlike-clang-debug-ubsan"
+          "name": "build-clang-debug-ubsan"
         },
         {
           "type": "test",
-          "name": "test-unixlike-clang-debug-ubsan"
+          "name": "test-clang-debug-ubsan"
         }
       ]
     },
@@ -1732,15 +1732,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-relwithdebinfo-asan"
+          "name": "conf-gcc-relwithdebinfo-asan"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-relwithdebinfo-asan"
+          "name": "build-gcc-relwithdebinfo-asan"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-relwithdebinfo-asan"
+          "name": "test-gcc-relwithdebinfo-asan"
         }
       ]
     },
@@ -1751,15 +1751,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-relwithdebinfo-tsan"
+          "name": "conf-gcc-relwithdebinfo-tsan"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-relwithdebinfo-tsan"
+          "name": "build-gcc-relwithdebinfo-tsan"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-relwithdebinfo-tsan"
+          "name": "test-gcc-relwithdebinfo-tsan"
         }
       ]
     },
@@ -1770,15 +1770,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-relwithdebinfo-ubsan"
+          "name": "conf-gcc-relwithdebinfo-ubsan"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-relwithdebinfo-ubsan"
+          "name": "build-gcc-relwithdebinfo-ubsan"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-relwithdebinfo-ubsan"
+          "name": "test-gcc-relwithdebinfo-ubsan"
         }
       ]
     },
@@ -1789,15 +1789,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-clang-relwithdebinfo-asan"
+          "name": "conf-clang-relwithdebinfo-asan"
         },
         {
           "type": "build",
-          "name": "build-unixlike-clang-relwithdebinfo-asan"
+          "name": "build-clang-relwithdebinfo-asan"
         },
         {
           "type": "test",
-          "name": "test-unixlike-clang-relwithdebinfo-asan"
+          "name": "test-clang-relwithdebinfo-asan"
         }
       ]
     },
@@ -1808,15 +1808,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-clang-relwithdebinfo-tsan"
+          "name": "conf-clang-relwithdebinfo-tsan"
         },
         {
           "type": "build",
-          "name": "build-unixlike-clang-relwithdebinfo-tsan"
+          "name": "build-clang-relwithdebinfo-tsan"
         },
         {
           "type": "test",
-          "name": "test-unixlike-clang-relwithdebinfo-tsan"
+          "name": "test-clang-relwithdebinfo-tsan"
         }
       ]
     },
@@ -1827,15 +1827,15 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-clang-relwithdebinfo-ubsan"
+          "name": "conf-clang-relwithdebinfo-ubsan"
         },
         {
           "type": "build",
-          "name": "build-unixlike-clang-relwithdebinfo-ubsan"
+          "name": "build-clang-relwithdebinfo-ubsan"
         },
         {
           "type": "test",
-          "name": "test-unixlike-clang-relwithdebinfo-ubsan"
+          "name": "test-clang-relwithdebinfo-ubsan"
         }
       ]
     },
@@ -1846,19 +1846,19 @@
       "steps": [
         {
           "type": "configure",
-          "name": "conf-unixlike-gcc-coverage"
+          "name": "conf-gcc-coverage"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-coverage"
+          "name": "build-gcc-coverage"
         },
         {
           "type": "test",
-          "name": "test-unixlike-gcc-coverage"
+          "name": "test-gcc-coverage"
         },
         {
           "type": "build",
-          "name": "build-unixlike-gcc-coverage-report"
+          "name": "build-gcc-coverage-report"
         }
       ]
     }

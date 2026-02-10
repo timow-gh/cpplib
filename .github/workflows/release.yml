@@ -16,10 +16,10 @@ jobs:
         include:
           - os: ubuntu-latest
             workflow-prefix: workflow-package-gcc
-            artifact-path: out/packages/package-unixlike-gcc-release
+            artifact-path: out/packages/package-gcc-release
           - os: windows-latest
             workflow-prefix: workflow-package-msvc
-            artifact-path: out/packages/package-windows-msvc-release
+            artifact-path: out/packages/package-msvc-release
     
     runs-on: ${{ matrix.os }}
     
