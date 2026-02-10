@@ -32,7 +32,8 @@ generate_export_header(${TARGET_NAME}
 target_include_directories(${TARGET_NAME}
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/export_header_includes>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 # Mark the generated export header as GENERATED so CMake doesn't check for its existence at configuration time
 set_source_files_properties(
