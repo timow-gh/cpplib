@@ -78,8 +78,8 @@ add_custom_target(coverage-report
     # Filter to keep only project source files (positive filtering)
     COMMAND ${LCOV_PATH}
         --extract ${COVERAGE_INFO_FILE}
-        ${CMAKE_SOURCE_DIR}/src/source/*
-        ${CMAKE_SOURCE_DIR}/src/include/*
+        ${PROJECT_SOURCE_DIR}/src/source/*
+        ${PROJECT_SOURCE_DIR}/src/include/*
         --output-file ${COVERAGE_INFO_FILTERED}
         --rc lcov_branch_coverage=1
         --ignore-errors empty,unused
