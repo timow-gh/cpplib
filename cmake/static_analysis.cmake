@@ -6,7 +6,7 @@ include_guard()
 # @param WARNINGS_AS_ERRORS Set to true, 1 or ON to enable warnings as errors
 function(enable_static_analysis targetName WARNINGS_AS_ERRORS)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-        enable_clang_tidy(${targetName})
+        enable_clang_tidy(${targetName} "${WARNINGS_AS_ERRORS}")
     elseif (MSVC)
         enable_vs_analysis("" ${targetName})
     else ()
@@ -14,54 +14,36 @@ function(enable_static_analysis targetName WARNINGS_AS_ERRORS)
     endif ()
 endfunction()
 
-# Enable clang-tidy static analysis project wide
-function(enable_clang_tidy WARNINGS_AS_ERRORS)
+# Enable clang-tidy static analysis for a target
+function(enable_clang_tidy targetName WARNINGS_AS_ERRORS)
     find_program(CLANGTIDY clang-tidy)
 
-    set(CMAKE_CXX_CLANG_TIDY "" PARENT_SCOPE)
-    set(CMAKE_C_CLANG_TIDY "" PARENT_SCOPE)
-
     if (CLANGTIDY)
-        # CMAKE_CXX_CLANG_TIDY
-        #
-        # This variable is used to initialize the property on each target as it is created. For example:
-        #
-        # set(CMAKE_CXX_CLANG_TIDY clang-tidy -checks=-*,readability-*)
-        # add_executable(foo foo.cxx)
-        set(CMAKE_CXX_CLANG_TIDY ${CLANGTIDY} -extra-arg=-Wno-unknown-warning-option)
+        set(CLANG_TIDY_COMMAND ${CLANGTIDY} -extra-arg=-Wno-unknown-warning-option)
 
         # set warnings as errors
         if (WARNINGS_AS_ERRORS)
-            list(APPEND CMAKE_CXX_CLANG_TIDY -warnings-as-errors=*)
+            list(APPEND CLANG_TIDY_COMMAND -warnings-as-errors=*)
         endif ()
-
-        # C clang-tidy
-        set(CMAKE_C_CLANG_TIDY ${CMAKE_CXX_CLANG_TIDY})
 
         # set C++ standard
         if (NOT "${CMAKE_CXX_STANDARD}" STREQUAL "")
             if ("${CMAKE_CXX_CLANG_TIDY_DRIVER_MODE}" STREQUAL "cl")
-                set(CMAKE_CXX_CLANG_TIDY ${CMAKE_CXX_CLANG_TIDY} -extra-arg=/std:c++${CMAKE_CXX_STANDARD})
+                list(APPEND CLANG_TIDY_COMMAND -extra-arg=/std:c++${CMAKE_CXX_STANDARD})
             else ()
-                set(CMAKE_CXX_CLANG_TIDY ${CMAKE_CXX_CLANG_TIDY} -extra-arg=-std=c++${CMAKE_CXX_STANDARD})
+                list(APPEND CLANG_TIDY_COMMAND -extra-arg=-std=c++${CMAKE_CXX_STANDARD})
             endif ()
         endif ()
 
-        # set C standard
-        if (NOT "${CMAKE_C_STANDARD}" STREQUAL "")
-            if ("${CMAKE_C_CLANG_TIDY_DRIVER_MODE}" STREQUAL "cl")
-                set(CMAKE_C_CLANG_TIDY ${CMAKE_C_CLANG_TIDY} -extra-arg=/std:c${CMAKE_C_STANDARD})
-            else ()
-                set(CMAKE_C_CLANG_TIDY ${CMAKE_C_CLANG_TIDY} -extra-arg=-std=c${CMAKE_C_STANDARD})
-            endif ()
-        endif ()
+        set_target_properties(${targetName}
+                PROPERTIES
+                CXX_CLANG_TIDY "${CLANG_TIDY_COMMAND}")
 
     else ()
         message(FATAL_ERROR "clang-tidy requested but executable not found")
     endif ()
 
-    message(STATUS "CMAKE_CXX_CLANG_TIDY: ${CMAKE_CXX_CLANG_TIDY}")
-    message(STATUS "CMAKE_C_CLANG_TIDY: ${CMAKE_C_CLANG_TIDY}")
+    message(STATUS "${targetName} CXX_CLANG_TIDY: ${CLANG_TIDY_COMMAND}")
 endfunction()
 
 # Enable static analysis inside Visual Studio IDE

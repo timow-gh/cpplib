@@ -7,4 +7,4 @@ namespace cpplib
 
 CPPLIB_EXPORT void libraryFunction(int value);
 
-}
+} // namespace cpplib

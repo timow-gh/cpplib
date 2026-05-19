@@ -76,7 +76,7 @@ CheckOptions:
   - key: readability-identifier-naming.EnumCase
     value: CamelCase
   - key: readability-identifier-naming.FunctionCase
-    value: snake_case
+    value: lower_case
   # Doesn't work with prefix for member
   #  - key: readability-identifier-naming.MemberCase
   #    value: camelBack

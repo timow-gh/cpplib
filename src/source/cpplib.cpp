@@ -9,4 +9,4 @@ void libraryFunction(int value)
   std::cout << "Hello from libraryFunction! The answer is " << value << "\n";
 }
 
-}
+} // namespace cpplib

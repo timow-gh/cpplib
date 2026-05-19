@@ -99,6 +99,7 @@
       "description": "Unix-like OS settings for gcc and clang toolchains",
       "hidden": true,
       "inherits": "conf-common",
+      "generator": "Ninja",
       "condition": {
         "type": "inList",
         "string": "${hostSystemName}",

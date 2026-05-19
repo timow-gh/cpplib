@@ -91,4 +91,5 @@ add_custom_target(test_install_clean
         COMMAND ${CMAKE_COMMAND} -E rm -Rf ${${test_target}_TEST_SOURCE_DIR}
 )
 
-add_test(NAME TestcpplibInstall COMMAND ${CMAKE_COMMAND} --build . --target test_install)
+add_test(NAME TestcpplibInstall
+        COMMAND ${CMAKE_COMMAND} --build "${CMAKE_BINARY_DIR}" --target test_install --config ${CMAKE_BUILD_TYPE})
