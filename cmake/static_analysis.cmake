@@ -20,7 +20,12 @@ function(enable_clang_tidy targetName WARNINGS_AS_ERRORS)
 
     if (CLANGTIDY)
         set(CLANG_TIDY_COMMAND ${CLANGTIDY} -extra-arg=-Wno-unknown-warning-option)
+        set(CLANG_TIDY_CONFIG_FILE "${PROJECT_SOURCE_DIR}/.clang-tidy")
 
+        if (EXISTS "${CLANG_TIDY_CONFIG_FILE}")
+            list(APPEND CLANG_TIDY_COMMAND --config-file=${CLANG_TIDY_CONFIG_FILE})
+        endif ()
+        
         # set warnings as errors
         if (WARNINGS_AS_ERRORS)
             list(APPEND CLANG_TIDY_COMMAND -warnings-as-errors=*)
