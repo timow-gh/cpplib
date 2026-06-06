@@ -304,10 +304,21 @@
       ]
     },
     {
+      "name": "conf-no-install-smoke-test",
+      "description": "Do not register the installed package smoke test",
+      "hidden": true,
+      "cacheVariables": {
+        "geoqik_INSTALL_SMOKE_TEST": "OFF"
+      }
+    },
+    {
       "name": "conf-asan-common",
       "description": "Common AddressSanitizer settings for Unix-like OS",
       "hidden": true,
-      "inherits": "conf-unix-common",
+      "inherits": [
+        "conf-unix-common",
+        "conf-no-install-smoke-test"
+      ],
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=address -fno-omit-frame-pointer -g",
         "CMAKE_C_FLAGS": "-fsanitize=address -fno-omit-frame-pointer -g",
@@ -321,7 +332,10 @@
       "name": "conf-tsan-common",
       "description": "Common ThreadSanitizer settings for Unix-like OS",
       "hidden": true,
-      "inherits": "conf-unix-common",
+      "inherits": [
+        "conf-unix-common",
+        "conf-no-install-smoke-test"
+      ],
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=thread -g",
         "CMAKE_C_FLAGS": "-fsanitize=thread -g",
@@ -335,7 +349,10 @@
       "name": "conf-ubsan-common",
       "description": "Common UndefinedBehaviorSanitizer settings for Unix-like OS",
       "hidden": true,
-      "inherits": "conf-unix-common",
+      "inherits": [
+        "conf-unix-common",
+        "conf-no-install-smoke-test"
+      ],
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=undefined -fno-omit-frame-pointer -g",
         "CMAKE_C_FLAGS": "-fsanitize=undefined -fno-omit-frame-pointer -g",
@@ -349,7 +366,10 @@
       "name": "conf-coverage-common",
       "description": "Common code coverage settings for Unix-like OS with GCC",
       "hidden": true,
-      "inherits": "conf-gcc-common",
+      "inherits": [
+        "conf-gcc-common",
+        "conf-no-install-smoke-test"
+      ],
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "--coverage -O0 -g",
         "CMAKE_C_FLAGS": "--coverage -O0 -g",
