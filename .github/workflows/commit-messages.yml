@@ -1,0 +1,26 @@
+name: Commit Messages
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate pull request title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          sh tools/git-hooks/check-conventional-commit.sh --message "$PR_TITLE"
+
+      - name: Validate commit messages
+        run: |
+          sh tools/git-hooks/check-conventional-commit.sh --range "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
