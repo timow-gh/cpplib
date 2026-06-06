@@ -48,9 +48,53 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Get version from tag
         id: get_version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        run: |
+          echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Verify CMake version matches tag
+        run: |
+          tag_version="${{ steps.get_version.outputs.version }}"
+          cmake_version="$(
+            awk '
+              /^[[:space:]]*project[[:space:]]*\([[:space:]]*geoqik/ { in_project = 1 }
+              in_project && /VERSION/ {
+                for (i = 1; i <= NF; i++) {
+                  if ($i == "VERSION") {
+                    print $(i + 1)
+                    exit
+                  }
+                }
+              }
+              in_project && /\)/ { in_project = 0 }
+            ' CMakeLists.txt
+          )"
+
+          if [ -z "$cmake_version" ]; then
+            echo "Could not find project(geoqik VERSION ...) in CMakeLists.txt" >&2
+            exit 1
+          fi
+
+          if [ "$tag_version" != "$cmake_version" ]; then
+            echo "Tag version v${tag_version} does not match CMake project version ${cmake_version}" >&2
+            exit 1
+          fi
+
+      - name: Generate release notes
+        uses: orhun/git-cliff-action@v4
+        id: git_cliff
+        with:
+          config: cliff.toml
+          args: -vv --latest --strip header
+        env:
+          OUTPUT: RELEASE_NOTES.md
+          GITHUB_REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
@@ -61,7 +105,7 @@ jobs:
           name: Release ${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false
-          generate_release_notes: true
+          body: ${{ steps.git_cliff.outputs.content }}
           files: |
             ubuntu-latest-shared-build/*
             ubuntu-latest-static-build/*
