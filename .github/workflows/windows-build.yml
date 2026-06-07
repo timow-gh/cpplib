@@ -7,8 +7,15 @@ on:
     branches: [main]
 
 jobs:
+  push-check-gate:
+    uses: ./.github/workflows/push-check-gate.yml
+    permissions:
+      pull-requests: read
+
   windows-build:
     runs-on: windows-latest
+    needs: push-check-gate
+    if: needs.push-check-gate.outputs.should_run == 'true'
     strategy:
       fail-fast: true
       matrix:
@@ -47,11 +54,21 @@ jobs:
   
   windows-build-summary:
     runs-on: ubuntu-latest
-    needs: windows-build
+    needs: [push-check-gate, windows-build]
     if: always()
     steps:
       - name: Check build status
         run: |
+          if [ "${{ needs.push-check-gate.result }}" != "success" ]; then
+            echo "Push check gate failed"
+            exit 1
+          fi
+
+          if [ "${{ needs.push-check-gate.outputs.should_run }}" != "true" ]; then
+            echo "Push checks intentionally skipped"
+            exit 0
+          fi
+
           if [ "${{ needs.windows-build.result }}" != "success" ]; then
             echo "Windows build failed"
             exit 1
