@@ -6,63 +6,30 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
-  build-packages:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        library-type: [shared, static]
-        include:
-          - os: ubuntu-latest
-            workflow-prefix: workflow-package-gcc
-            artifact-path: out/packages/package-gcc-release
-          - os: windows-latest
-            workflow-prefix: workflow-package-msvc
-            artifact-path: out/packages/package-msvc-release
-    
-    runs-on: ${{ matrix.os }}
-    
+  validate_version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install NSIS (Windows only)
-        if: matrix.os == 'windows-latest'
-        run: choco install nsis -y
-      
-      - name: Create ${{ matrix.library-type }} package
-        run: |
-          cmake --workflow --preset ${{ matrix.workflow-prefix }}-${{ matrix.library-type }}
+
+      - name: Validate release version
+        id: version
         shell: bash
-      
-      - name: Upload ${{ matrix.os }} ${{ matrix.library-type }} artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os }}-${{ matrix.library-type }}-build
-          path: ${{ github.workspace }}/${{ matrix.artifact-path }}-${{ matrix.library-type }}/*.*
-          retention-days: 1
-
-  create-release:
-    needs: build-packages
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Get version from tag
-        id: get_version
         run: |
-          echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Verify CMake version matches tag
-        run: |
-          tag_version="${{ steps.get_version.outputs.version }}"
           cmake_version="$(
             awk '
-              /^[[:space:]]*project[[:space:]]*\([[:space:]]*geoqik/ { in_project = 1 }
+              /^[[:space:]]*project[[:space:]]*\([[:space:]]*cpplib/ { in_project = 1 }
               in_project && /VERSION/ {
                 for (i = 1; i <= NF; i++) {
                   if ($i == "VERSION") {
@@ -74,16 +41,90 @@ jobs:
               in_project && /\)/ { in_project = 0 }
             ' CMakeLists.txt
           )"
+          manifest_version="$(jq -r '.version' vcpkg.json)"
 
-          if [ -z "$cmake_version" ]; then
-            echo "Could not find project(geoqik VERSION ...) in CMakeLists.txt" >&2
+          if [[ -z "$cmake_version" ]]; then
+            echo "Could not read the CMake project version from CMakeLists.txt" >&2
+            exit 1
+          fi
+          if [[ "$manifest_version" != "$cmake_version" ]]; then
+            echo "vcpkg.json version $manifest_version does not match CMake version $cmake_version" >&2
             exit 1
           fi
 
-          if [ "$tag_version" != "$cmake_version" ]; then
-            echo "Tag version v${tag_version} does not match CMake project version ${cmake_version}" >&2
-            exit 1
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            if [[ ! "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Release tags must use vMAJOR.MINOR.PATCH" >&2
+              exit 1
+            fi
+            tag_version="${GITHUB_REF_NAME#v}"
+            if [[ "$tag_version" != "$cmake_version" ]]; then
+              echo "Tag version $tag_version does not match CMake version $cmake_version" >&2
+              exit 1
+            fi
           fi
+
+          echo "version=$cmake_version" >> "$GITHUB_OUTPUT"
+
+  build-packages:
+    needs: validate_version
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+        library-type: [shared, static]
+        include:
+          - os: ubuntu-24.04
+            workflow-prefix: workflow-package-gcc
+            artifact-path: out/packages/package-gcc-release
+          - os: windows-latest
+            workflow-prefix: workflow-package-msvc
+            artifact-path: out/packages/package-msvc-release
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set VCPKG_ROOT (Linux)
+        if: runner.os == 'Linux'
+        run: echo "VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT" >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Set VCPKG_ROOT (Windows)
+        if: runner.os == 'Windows'
+        run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Install WiX (Windows only)
+        # CPack's WIX generator drives WiX v3 (candle/light). windows-latest ships
+        # WiX v3, but install it explicitly for reproducibility.
+        if: matrix.os == 'windows-latest'
+        run: choco install wixtoolset -y
+
+      - name: Create ${{ matrix.library-type }} package
+        run: |
+          cmake --workflow --preset ${{ matrix.workflow-prefix }}-${{ matrix.library-type }}
+        shell: bash
+
+      - name: Upload ${{ matrix.os }} ${{ matrix.library-type }} artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.library-type }}-build
+          path: ${{ github.workspace }}/${{ matrix.artifact-path }}-${{ matrix.library-type }}/*.*
+          retention-days: 1
+
+  create-release:
+    if: github.event_name == 'push'
+    needs:
+      - validate_version
+      - build-packages
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Generate release notes
         uses: orhun/git-cliff-action@v4
@@ -102,13 +143,13 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Release ${{ steps.get_version.outputs.version }}
+          name: Release ${{ needs.validate_version.outputs.version }}
           draft: false
           prerelease: false
           body: ${{ steps.git_cliff.outputs.content }}
           files: |
-            ubuntu-latest-shared-build/*
-            ubuntu-latest-static-build/*
+            ubuntu-24.04-shared-build/*
+            ubuntu-24.04-static-build/*
             windows-latest-shared-build/*
             windows-latest-static-build/*
         env:

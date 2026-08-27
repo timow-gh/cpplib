@@ -12,6 +12,10 @@ inputs:
     description: 'Whether to build shared libraries (ON/OFF)'
     required: false
     default: 'ON'
+  build_native_args:
+    description: 'Additional native build-tool arguments passed after cmake --build --'
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -19,13 +23,31 @@ runs:
     - uses: actions/checkout@v4
       with:
         submodules: 'recursive'
-    
+
+    - name: Set VCPKG_ROOT
+      run: echo "VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT" >> $GITHUB_ENV
+      shell: bash
+
     - name: Install build tools
       run: |
-        sudo apt-get update
-        sudo apt-get install -y ninja-build ${{ inputs.install_tools }}
+        # The runner's Google Chrome repository can occasionally be mid-sync.
+        # Retry with fresh indexes rather than failing the entire build.
+        for attempt in 1 2 3; do
+          if sudo apt-get update; then
+            break
+          fi
+          if [ "$attempt" = 3 ]; then
+            exit 1
+          fi
+          sudo rm -rf /var/lib/apt/lists/*
+          sleep 10
+        done
+        # gcc-14/g++-14 and clang-20: compilers used by the presets.
+        # libclang-rt-20-dev: clang sanitizer runtime (ASan/TSan/UBSan)
+        # ninja-build: fast build backend used by the CMake presets
+        sudo apt-get install -y gcc-14 g++-14 clang-20 libclang-rt-20-dev ninja-build ${{ inputs.install_tools }}
       shell: bash
-    
+
     - name: Extract preset names
       id: preset
       run: |
@@ -37,17 +59,31 @@ runs:
         echo "build=build-${BASE_NAME}" >> $GITHUB_OUTPUT
         echo "test=test-${BASE_NAME}" >> $GITHUB_OUTPUT
       shell: bash
-    
+
     - name: Configure
       run: |
-        cmake --preset ${{ steps.preset.outputs.configure }} -DBUILD_SHARED_LIBS=${{ inputs.build_shared_libs }}
+        # vcpkg may download source archives while configuring. GitHub occasionally returns
+        # transient 5xx/connection errors, so retry the complete configure step with backoff.
+        for attempt in 1 2 3 4 5; do
+          if cmake --preset ${{ steps.preset.outputs.configure }} -DBUILD_SHARED_LIBS=${{ inputs.build_shared_libs }}; then
+            break
+          fi
+          if [ "$attempt" = 5 ]; then
+            exit 1
+          fi
+          sleep "$((attempt * 30))"
+        done
       shell: bash
-    
+
     - name: Build
       run: |
-        cmake --build --preset ${{ steps.preset.outputs.build }}
+        if [ -n "${{ inputs.build_native_args }}" ]; then
+          cmake --build --preset ${{ steps.preset.outputs.build }} -- ${{ inputs.build_native_args }}
+        else
+          cmake --build --preset ${{ steps.preset.outputs.build }}
+        fi
       shell: bash
-    
+
     - name: Test
       run: |
         ctest --preset ${{ steps.preset.outputs.test }}
