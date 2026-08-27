@@ -76,6 +76,14 @@ if (${PROJECT_NAME}_BUILD_DOCUMENTATION)
     enable_doxygen()
 endif ()
 
+# The MSVC presets use the x64-windows-static vcpkg triplet, which builds
+# dependencies (e.g. fmt) against the static CRT. Match that here so cpplib and
+# its dependencies agree on the runtime library and link cleanly. Must be set
+# before any targets are created.
+if (MSVC AND VCPKG_TARGET_TRIPLET MATCHES "-static")
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif ()
+
 add_subdirectory(dependencies)
 
 add_subdirectory(src)

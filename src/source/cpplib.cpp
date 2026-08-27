@@ -1,11 +1,11 @@
 #include "cpplib/cpplib.hpp"
 
-#include <iostream>
+#include <fmt/core.h>
 
 namespace cpplib {
 
 void libraryFunction(int value) {
-    std::cout << "Hello from libraryFunction! The answer is " << value << "\n";
+    fmt::print("Hello from libraryFunction! The answer is {}\n", value);
 }
 
 } // namespace cpplib

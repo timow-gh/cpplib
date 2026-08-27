@@ -1,5 +1,10 @@
 include(GNUInstallDirs)
 
+# fmt is provided through vcpkg (see vcpkg.json). It is used only in the
+# implementation, so it is linked PRIVATE below and does not leak into the
+# installed/exported interface.
+find_package(fmt CONFIG REQUIRED)
+
 set(TARGET_NAME cpplib)
 add_library(${TARGET_NAME})
 
@@ -21,6 +26,9 @@ set_target_properties(${TARGET_NAME}
         EXPORT_NAME ${TARGET_NAME})
 
 add_library(${PROJECT_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
+
+# PRIVATE: fmt is an implementation detail; consumers of cpplib do not need it.
+target_link_libraries(${TARGET_NAME} PRIVATE fmt::fmt)
 
 include(GenerateExportHeader)
 set(EXPORT_HEADER_BASE_NAME "${TARGET_NAME}")
