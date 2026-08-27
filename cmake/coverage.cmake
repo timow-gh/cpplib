@@ -43,7 +43,10 @@ endif()
 
 if(NOT GCOV_TOOL)
     message(FATAL_ERROR "Coverage enabled but 'gcov' not found!\n"
-            "  Install the gcov version matching the coverage compiler.")
+            "  Coverage compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}\n"
+            "  Searched for: gcov-${GCC_MAJOR_VERSION}, gcov (and the GCOV env var)\n"
+            "  Install the gcov version matching the coverage compiler, or set the GCOV\n"
+            "  environment variable to its name/path (e.g. GCOV=gcov-14).")
     return()
 endif()
 

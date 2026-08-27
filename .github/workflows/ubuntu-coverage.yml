@@ -15,6 +15,19 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Ensure matching gcov
+        run: |
+          # The coverage preset compiles with gcc-14/g++-14, so coverage.cmake needs the
+          # matching gcov-14 (a gcov/gcc version mismatch triggers lcov "stamp mismatch"
+          # errors). gcc-14 ships /usr/bin/gcov-14; install it explicitly rather than relying
+          # on it being present on the runner image, then pin it via the GCOV env var that
+          # cmake/coverage.cmake honors.
+          sudo apt-get update
+          sudo apt-get install -y gcc-14
+          echo "GCOV=gcov-14" >> "$GITHUB_ENV"
+        shell: bash
+
       - uses: ./.github/actions/ubuntu-build-steps
         with:
           cmake_workflow: workflow-test-gcc-coverage
