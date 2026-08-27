@@ -16,7 +16,16 @@ endfunction()
 
 # Enable clang-tidy static analysis for a target
 function(enable_clang_tidy targetName WARNINGS_AS_ERRORS)
-    find_program(CLANGTIDY clang-tidy)
+    if (CMAKE_CXX_COMPILER_VERSION)
+        string(REGEX MATCH "^[0-9]+" CLANG_TIDY_VERSION "${CMAKE_CXX_COMPILER_VERSION}")
+    endif ()
+
+    set(CLANG_TIDY_NAMES clang-tidy)
+    if (CLANG_TIDY_VERSION)
+        list(PREPEND CLANG_TIDY_NAMES clang-tidy-${CLANG_TIDY_VERSION})
+    endif ()
+
+    find_program(CLANGTIDY NAMES ${CLANG_TIDY_NAMES})
 
     if (CLANGTIDY)
         set(CLANG_TIDY_COMMAND ${CLANGTIDY} -extra-arg=-Wno-unknown-warning-option)
