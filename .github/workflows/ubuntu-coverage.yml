@@ -20,12 +20,19 @@ jobs:
         run: |
           # The coverage preset compiles with gcc-14/g++-14, so coverage.cmake needs the
           # matching gcov-14 (a gcov/gcc version mismatch triggers lcov "stamp mismatch"
-          # errors). gcc-14 ships /usr/bin/gcov-14; install it explicitly rather than relying
-          # on it being present on the runner image, then pin it via the GCOV env var that
-          # cmake/coverage.cmake honors.
+          # errors). gcc-14 ships /usr/bin/gcov-14; install it explicitly, then pin it via
+          # the GCOV env var that cmake/coverage.cmake honors. Export the *absolute path*:
+          # coverage.cmake resolves an absolute GCOV with a plain set() (no find_program),
+          # which sidesteps CMake's cached find_program lookup under the vcpkg toolchain.
           sudo apt-get update
           sudo apt-get install -y gcc-14
-          echo "GCOV=gcov-14" >> "$GITHUB_ENV"
+          GCOV_BIN="$(command -v gcov-14)"
+          if [ -z "${GCOV_BIN}" ]; then
+            echo "gcov-14 not found on PATH after installing gcc-14" >&2
+            exit 1
+          fi
+          echo "Using gcov: ${GCOV_BIN}"
+          echo "GCOV=${GCOV_BIN}" >> "$GITHUB_ENV"
         shell: bash
 
       - uses: ./.github/actions/ubuntu-build-steps

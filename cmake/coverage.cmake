@@ -22,23 +22,36 @@ endif()
 # Resolve the gcov tool. Prefer an explicit GCOV env var, then a version-matched
 # gcov-<major> for GNU builds, then a generic gcov. Mismatched gcov/gcc versions
 # are a common cause of "stamp mismatch" errors in lcov, so this matters on CI.
+#
+# Each strategy uses a *distinct* cache variable: find_program is cached, so reusing
+# one variable would make only the first lookup actually search (a failed first lookup
+# caches NOTFOUND and short-circuits the rest). We pick the first that resolves below.
 if(DEFINED ENV{GCOV} AND NOT "$ENV{GCOV}" STREQUAL "")
     if(IS_ABSOLUTE "$ENV{GCOV}" AND EXISTS "$ENV{GCOV}")
         set(GCOV_TOOL "$ENV{GCOV}")
     else()
-        find_program(GCOV_TOOL NAMES "$ENV{GCOV}")
+        find_program(GCOV_FROM_ENV NAMES "$ENV{GCOV}")
+        if(GCOV_FROM_ENV)
+            set(GCOV_TOOL "${GCOV_FROM_ENV}")
+        endif()
     endif()
 endif()
 
 if(NOT GCOV_TOOL AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     string(REGEX MATCH "^[0-9]+" GCC_MAJOR_VERSION "${CMAKE_CXX_COMPILER_VERSION}")
     if(GCC_MAJOR_VERSION)
-        find_program(GCOV_TOOL NAMES gcov-${GCC_MAJOR_VERSION} gcov)
+        find_program(GCOV_VERSIONED NAMES gcov-${GCC_MAJOR_VERSION})
+        if(GCOV_VERSIONED)
+            set(GCOV_TOOL "${GCOV_VERSIONED}")
+        endif()
     endif()
 endif()
 
 if(NOT GCOV_TOOL)
-    find_program(GCOV_TOOL NAMES gcov)
+    find_program(GCOV_GENERIC NAMES gcov)
+    if(GCOV_GENERIC)
+        set(GCOV_TOOL "${GCOV_GENERIC}")
+    endif()
 endif()
 
 if(NOT GCOV_TOOL)
