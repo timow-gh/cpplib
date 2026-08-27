@@ -373,8 +373,6 @@
         "conf-no-install-smoke-test"
       ],
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "gcc-14",
-        "CMAKE_CXX_COMPILER": "g++-14",
         "CMAKE_CXX_FLAGS": "--coverage -O0 -g",
         "CMAKE_C_FLAGS": "--coverage -O0 -g",
         "CMAKE_EXE_LINKER_FLAGS": "--coverage",
@@ -443,7 +441,11 @@
       "inherits": [
         "conf-gcc-debug",
         "conf-coverage-common"
-      ]
+      ],
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc-14",
+        "CMAKE_CXX_COMPILER": "g++-14"
+      }
     },
     {
       "name": "conf-clang-debug-asan",
