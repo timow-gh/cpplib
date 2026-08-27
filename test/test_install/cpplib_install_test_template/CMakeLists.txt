@@ -28,19 +28,24 @@ set_target_properties(use_installdir
 install(TARGETS use_installdir
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-# Install the cpplib shared library that the executable depends on
-if(MSVC)
-    # On Windows, DLLs are in the bin directory
-    file(GLOB CPPLIB_DLLS "${CMAKE_PREFIX_PATH}/bin/cpplib*.dll")
-    if(CPPLIB_DLLS)
-        install(FILES ${CPPLIB_DLLS}
+# Bundle the cpplib shared library the executable depends on, so the installed
+# consumer is runnable via its RPATH ($ORIGIN/../lib). Resolve the ACTUAL file
+# from the imported target instead of globbing CMAKE_PREFIX_PATH, which is
+# unreliable when the vcpkg toolchain adds extra prefix-path entries.
+get_target_property(_cpplib_type cpplib::cpplib TYPE)
+
+if(_cpplib_type STREQUAL "SHARED_LIBRARY")
+    if(MSVC)
+        # On Windows the runtime artifact is the DLL, resolved from the imported target.
+        install(FILES $<TARGET_FILE:cpplib::cpplib>
                 DESTINATION ${CMAKE_INSTALL_BINDIR})
-    endif()
-else()
-    # On Unix-like systems, shared libraries are in lib directory
-    file(GLOB CPPLIB_LIBS "${CMAKE_PREFIX_PATH}/lib/libcpplib*.so*")
-    if(CPPLIB_LIBS)
-        install(FILES ${CPPLIB_LIBS}
+    else()
+        # On ELF/Mach-O the loader looks up the SONAME (e.g. libcpplib.so.0).
+        # TARGET_SONAME_FILE resolves to exactly that name; install(FILES) follows
+        # the symlink and writes a real file under the SONAME basename, which is
+        # what the RPATH ($ORIGIN/../lib) needs at runtime.
+        install(FILES $<TARGET_SONAME_FILE:cpplib::cpplib>
                 DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()
 endif()
+# For a static cpplib there is no runtime library to bundle; nothing to do.
