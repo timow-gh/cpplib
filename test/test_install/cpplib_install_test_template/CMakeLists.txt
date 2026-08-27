@@ -41,11 +41,25 @@ if(_cpplib_type STREQUAL "SHARED_LIBRARY")
                 DESTINATION ${CMAKE_INSTALL_BINDIR})
     else()
         # On ELF/Mach-O the loader looks up the SONAME (e.g. libcpplib.so.0).
-        # TARGET_SONAME_FILE resolves to exactly that name; install(FILES) follows
-        # the symlink and writes a real file under the SONAME basename, which is
-        # what the RPATH ($ORIGIN/../lib) needs at runtime.
-        install(FILES $<TARGET_SONAME_FILE:cpplib::cpplib>
+        # In the install tree the SONAME entry (TARGET_SONAME_FILE) is a *symlink*
+        # to the real, fully versioned file (TARGET_FILE, e.g. libcpplib.so.0.0.0).
+        # install(FILES) copies a symlink argument verbatim as a symlink, so
+        # installing only TARGET_SONAME_FILE leaves a dangling link and the loader
+        # fails with "cannot open shared object file". Install the real file *and*
+        # recreate the SONAME symlink next to it so RPATH ($ORIGIN/../lib) resolves
+        # to an actual ELF at runtime.
+        install(FILES $<TARGET_FILE:cpplib::cpplib>
                 DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+        # Recreate the SONAME -> real-file symlink in the install tree, but only
+        # when they differ (they are identical for an unversioned library).
+        install(CODE "
+            set(_real \"$<TARGET_FILE_NAME:cpplib::cpplib>\")
+            set(_soname \"$<TARGET_SONAME_FILE_NAME:cpplib::cpplib>\")
+            if(NOT _real STREQUAL _soname)
+                file(CREATE_LINK \"\${_real}\" \"\${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/\${_soname}\" SYMBOLIC)
+            endif()
+        ")
     endif()
 endif()
 # For a static cpplib there is no runtime library to bundle; nothing to do.
