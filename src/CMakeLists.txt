@@ -48,7 +48,7 @@ target_sources(${TARGET_NAME}
     FILES ${CMAKE_CURRENT_BINARY_DIR}/export_header_includes/${TARGET_NAME}/${GENERATED_TARGET_EXPORTS_FILE_NAME}
 )
 
-target_compile_features(${TARGET_NAME} PUBLIC cxx_std_20)
+target_compile_features(${TARGET_NAME} PUBLIC cxx_std_23)
 
 if (DEFINED ${PROJECT_NAME}_USE_WARNINGS AND ${PROJECT_NAME}_USE_WARNINGS)
     add_warnings_and_compile_options(${TARGET_NAME} "${${PROJECT_NAME}_WARNINGS_AS_ERRORS}")
@@ -84,6 +84,8 @@ if (${PROJECT_NAME}_INSTALL)
             VERSION ${PROJECT_VERSION}
             COMPATIBILITY SameMajorVersion)
 
+    # project_name is referenced as @project_name@ inside Config.cmake.in
+    set(project_name "${PROJECT_NAME}")
     configure_package_config_file(
             "${PROJECT_SOURCE_DIR}/cmake/Config.cmake.in"
             "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"

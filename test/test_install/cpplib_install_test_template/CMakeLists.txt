@@ -20,7 +20,7 @@ target_link_libraries(use_installdir PRIVATE cpplib::cpplib)
 set_target_properties(use_installdir
         PROPERTIES
         DEBUG_POSTFIX d
-        CXX_STANDARD 20
+        CXX_STANDARD 23
         CXX_STANDARD_REQUIRED ON
         CXX_EXTENSIONS OFF)
 

@@ -12,8 +12,9 @@
       "hidden": true,
       "binaryDir": "${sourceDir}/out/build/${presetName}",
       "installDir": "${sourceDir}/out/install/${presetName}",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "CMAKE_CXX_STANDARD": "20",
+        "CMAKE_CXX_STANDARD": "23",
         "CMAKE_CXX_EXTENSIONS": "OFF",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
@@ -91,7 +92,8 @@
         "strategy": "external"
       },
       "cacheVariables": {
-        "CPACK_GENERATOR": "NSIS"
+        "CPACK_GENERATOR": "WIX",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
       }
     },
     {
