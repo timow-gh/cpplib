@@ -13,7 +13,7 @@
       "binaryDir": "${sourceDir}/out/build/${presetName}",
       "installDir": "${sourceDir}/out/install/${presetName}",
       "cacheVariables": {
-        "CMAKE_CXX_STANDARD": "20",
+        "CMAKE_CXX_STANDARD": "23",
         "BUILD_SHARED_LIBS": "OFF",
         "CMAKE_CXX_EXTENSIONS": "OFF"
       }
@@ -109,7 +109,7 @@
       "name": "conf-msvc-release",
       "displayName": "msvc Release (User Mode)",
       "description": "Target Windows with the msvc compiler, release build type",
-      "inherits": ["conf-windows-common", "conf-release"]
+      "inherits": ["conf-msvc-common", "conf-release"]
     },
     {
       "name": "conf-gcc-debug",

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?include "cpack_variables.wxi"?>
+
+<!--
+  Custom CPack WiX (v3) template. Based on CMake's built-in
+  Modules/Internal/CPack/WIX-v3/WIX.template.in, extended to use the
+  WixUI_Advanced dialog set so the installer offers a per-user vs all-users
+  choice (like the previous NSIS installer did).
+
+  WixUI_Advanced requires the install directory to be exposed as the
+  APPLICATIONFOLDER property and a few supporting properties/variables that the
+  default CPack template does not provide; those are added below. CPack roots its
+  generated directory tree at Id="INSTALL_ROOT", so APPLICATIONFOLDER is aliased
+  to it.
+
+  When updating CMake, diff this against the current built-in template to pick up
+  any upstream changes.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"@CPACK_WIX_CUSTOM_XMLNS_EXPANDED@
+    RequiredVersion="3.6.3303.0">
+
+    <Product Id="$(var.CPACK_WIX_PRODUCT_GUID)"
+        Name="$(var.CPACK_PACKAGE_NAME)"
+        Language="1033"
+        Version="$(var.CPACK_PACKAGE_VERSION)"
+        Manufacturer="$(var.CPACK_PACKAGE_VENDOR)"
+        UpgradeCode="$(var.CPACK_WIX_UPGRADE_GUID)">
+
+        <!-- InstallScope is intentionally left off the Package element: the user
+             chooses per-user vs per-machine at runtime via WixUI_Advanced. -->
+        <Package InstallerVersion="301" Compressed="yes"/>
+
+        <Media Id="1" Cabinet="media1.cab" EmbedCab="yes"/>
+
+        <MajorUpgrade
+            Schedule="afterInstallInitialize"
+            AllowSameVersionUpgrades="yes"
+            DowngradeErrorMessage="A later version of [ProductName] is already installed. Setup will now exit."/>
+
+        <WixVariable Id="WixUILicenseRtf" Value="$(var.CPACK_WIX_LICENSE_RTF)"/>
+
+        <!-- WixUI_Advanced integration. APPLICATIONFOLDER is the directory
+             property WixUI_Advanced drives; alias it to CPack's INSTALL_ROOT
+             directory. ApplicationFolderName is the per-user subfolder name and
+             the default per-machine folder name under Program Files. -->
+        <!-- ApplicationFolderName: CPACK_PACKAGE_INSTALL_DIRECTORY is not
+             exported as a WiX preprocessor variable, so the folder name is
+             stated literally here. Keep it in sync with
+             CPACK_PACKAGE_INSTALL_DIRECTORY in cmake/packaging.cmake. -->
+        <Property Id="ApplicationFolderName" Value="cpplib"/>
+        <WixVariable Id="WixUISupportPerUser" Value="1"/>
+        <WixVariable Id="WixUISupportPerMachine" Value="1"/>
+        <!-- Default the scope selection to all-users (per-machine); the user can
+             switch to per-user in the InstallScopeDlg. -->
+        <Property Id="WixAppFolder" Value="WixPerMachineFolder"/>
+
+        <!-- WixUI_Advanced drives the install location through APPLICATIONFOLDER,
+             but CPack anchors its whole file tree to the directory with id
+             INSTALL_ROOT. Copy APPLICATIONFOLDER into INSTALL_ROOT just before
+             costing (in both the UI and execute sequences) so the files follow
+             whatever scope/path the user picks, including a silent install that
+             passes APPLICATIONFOLDER=. -->
+        <CustomAction Id="SetInstallRootFromApplicationFolder"
+                      Property="INSTALL_ROOT" Value="[APPLICATIONFOLDER]"
+                      Execute="immediate"/>
+        <InstallExecuteSequence>
+            <Custom Action="SetInstallRootFromApplicationFolder" Before="CostFinalize">APPLICATIONFOLDER</Custom>
+        </InstallExecuteSequence>
+        <InstallUISequence>
+            <Custom Action="SetInstallRootFromApplicationFolder" Before="CostFinalize">APPLICATIONFOLDER</Custom>
+        </InstallUISequence>
+
+        <?ifdef CPACK_WIX_PRODUCT_ICON?>
+        <Property Id="ARPPRODUCTICON">ProductIcon.ico</Property>
+        <Icon Id="ProductIcon.ico" SourceFile="$(var.CPACK_WIX_PRODUCT_ICON)"/>
+        <?endif?>
+
+        <?ifdef CPACK_WIX_UI_BANNER?>
+        <WixVariable Id="WixUIBannerBmp" Value="$(var.CPACK_WIX_UI_BANNER)"/>
+        <?endif?>
+
+        <?ifdef CPACK_WIX_UI_DIALOG?>
+        <WixVariable Id="WixUIDialogBmp" Value="$(var.CPACK_WIX_UI_DIALOG)"/>
+        <?endif?>
+
+        <FeatureRef Id="ProductFeature"/>
+
+        <UIRef Id="WixUI_Advanced" />
+        <UIRef Id="WixUI_ErrorProgressText" />
+
+        <?include "properties.wxi"?>
+        <?include "product_fragment.wxi"?>
+    </Product>
+</Wix>

@@ -2,8 +2,7 @@
 
 #include "cpplib/cpplib_export.h"
 
-namespace cpplib
-{
+namespace cpplib {
 
 CPPLIB_EXPORT void libraryFunction(int value);
 
