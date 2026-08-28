@@ -59,11 +59,17 @@ add_custom_target(test_install
         "${PROJECT_SOURCE_DIR}/CMakePresets.json"
         "${${test_target}_TEST_SOURCE_DIR}/CMakePresets.json"
 
+        # Reuse the main build's already-provisioned vcpkg installed tree so the
+        # nested consumer configure does NOT re-resolve/rebuild dependencies (e.g.
+        # fmt) from scratch in a temp dir. A fresh manifest install here is slow and
+        # can block on network / a vcpkg lock / a prompt in a headless CI runner,
+        # which is what made this test appear to hang.
         COMMAND ${CMAKE_COMMAND}
         -B ${${test_target}_TEST_SOURCE_DIR}/build
         -S ${${test_target}_TEST_SOURCE_DIR}
         --preset "${PRESET}"
         -DCMAKE_PREFIX_PATH=${${test_target}_TEST_INSTALL_DIR}
+        -DVCPKG_INSTALLED_DIR=${PROJECT_BINARY_DIR}/vcpkg_installed
 
         COMMAND ${CMAKE_COMMAND}
         --build ${${test_target}_TEST_SOURCE_DIR}/build
@@ -93,3 +99,8 @@ add_custom_target(test_install_clean
 
 add_test(NAME TestcpplibInstall
         COMMAND ${CMAKE_COMMAND} --build "${CMAKE_BINARY_DIR}" --target test_install --config ${CMAKE_BUILD_TYPE})
+
+# Guardrail: this test drives a nested configure/build. If it stalls (e.g. a vcpkg
+# step blocking on network or a lock), fail deterministically instead of hanging the
+# whole CI job until the runner-level timeout.
+set_tests_properties(TestcpplibInstall PROPERTIES TIMEOUT 600)
