@@ -22,7 +22,14 @@ endif ()
 
 project(cpplib
         VERSION 0.0.0
+        DESCRIPTION "A C++ library and application template"
+        HOMEPAGE_URL "https://github.com/timow-gh/cpplib"
         LANGUAGES CXX)
+
+# Every name of this project is derived from the project name: targets, CMake
+# package, export macro, test names, package names, installer folder.
+set(${PROJECT_NAME}_LIBRARY_TARGET ${PROJECT_NAME})
+set(${PROJECT_NAME}_APP_TARGET ${PROJECT_NAME}_app)
 
 include(warnings)
 include(static_analysis)
@@ -42,6 +49,7 @@ if (PROJECT_IS_TOP_LEVEL)
     option(${PROJECT_NAME}_STATIC_ANALYSIS "" ON)
     option(${PROJECT_NAME}_USE_CPPCHECK "" OFF)
     option(${PROJECT_NAME}_TESTS "" ON)
+    option(${PROJECT_NAME}_APP "Build the ${PROJECT_NAME}_app application" ON)
     option(${PROJECT_NAME}_PACK "Create release packages" ON)
 else ()
     option(${PROJECT_NAME}_USE_SCCACHE "Use sccache" OFF)
@@ -50,6 +58,7 @@ else ()
     option(${PROJECT_NAME}_STATIC_ANALYSIS "" OFF)
     option(${PROJECT_NAME}_USE_CPPCHECK "" OFF)
     option(${PROJECT_NAME}_TESTS "" OFF)
+    option(${PROJECT_NAME}_APP "Build the ${PROJECT_NAME}_app application" OFF)
     option(${PROJECT_NAME}_PACK "Create release packages" OFF)
 endif ()
 
@@ -76,17 +85,33 @@ if (${PROJECT_NAME}_BUILD_DOCUMENTATION)
     enable_doxygen()
 endif ()
 
-# The MSVC presets use the x64-windows-static vcpkg triplet, which builds
-# dependencies (e.g. fmt) against the static CRT. Match that here so cpplib and
-# its dependencies agree on the runtime library and link cleanly. Must be set
-# before any targets are created.
-if (MSVC AND VCPKG_TARGET_TRIPLET MATCHES "-static")
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+# MSVC runtime library (CRT). Every target and every vcpkg dependency must use the
+# same CRT, otherwise linking fails with LNK2038. The vcpkg triplet chosen by the
+# preset decides:
+#   x64-windows-static    -> static CRT  (/MT): standalone builds, one .exe
+#   x64-windows-static-md -> dynamic CRT (/MD): shared builds, .exe + library DLL
+#                            + app-local vcruntime140/msvcp140 (see app/CMakeLists.txt)
+# Both triplets build the third-party libraries themselves as static libraries.
+# Must be set before any targets are created.
+if (MSVC AND NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+    if (VCPKG_TARGET_TRIPLET MATCHES "-static$")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        if (BUILD_SHARED_LIBS)
+            message(AUTHOR_WARNING "Shared build with the static CRT (${VCPKG_TARGET_TRIPLET}): every DLL gets its own "
+                    "CRT heap. Use the x64-windows-static-md triplet (the *-shared presets) for shared builds.")
+        endif ()
+    else ()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    endif ()
 endif ()
 
 add_subdirectory(dependencies)
 
 add_subdirectory(src)
+
+if (${PROJECT_NAME}_APP)
+    add_subdirectory(app)
+endif ()
 
 if (${PROJECT_NAME}_TESTS)
     include(CTest)
@@ -101,6 +126,17 @@ if (${PROJECT_NAME}_TESTS)
 endif ()
 
 if (${PROJECT_NAME}_INSTALL)
+    # The license ships with everything this project delivers. In static builds the
+    # library SDK is not installed, so it goes with the application component.
+    if (BUILD_SHARED_LIBS)
+        set(_license_component runtime)
+    else ()
+        set(_license_component app)
+    endif ()
+    install(FILES "${PROJECT_SOURCE_DIR}/License"
+            DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+            COMPONENT ${_license_component})
+
     if (${PROJECT_NAME}_PACK)
         include(cmake/packaging.cmake)
     endif ()

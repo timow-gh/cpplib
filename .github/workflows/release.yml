@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
+      name: ${{ steps.version.outputs.name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -27,9 +28,11 @@ jobs:
         id: version
         shell: bash
         run: |
+          # The project name drives every target, package and installer name.
+          project_name="$(grep -oP '^\s*project\(\s*\K[A-Za-z0-9_]+' CMakeLists.txt | head -n 1)"
           cmake_version="$(
             awk '
-              /^[[:space:]]*project[[:space:]]*\([[:space:]]*cpplib/ { in_project = 1 }
+              /^[[:space:]]*project[[:space:]]*\(/ { in_project = 1 }
               in_project && /VERSION/ {
                 for (i = 1; i <= NF; i++) {
                   if ($i == "VERSION") {
@@ -65,13 +68,58 @@ jobs:
           fi
 
           echo "version=$cmake_version" >> "$GITHUB_OUTPUT"
+          echo "name=$project_name" >> "$GITHUB_OUTPUT"
+
+      # Everything that tells installed copies of the product apart from other
+      # products: the project name (package names) and the MSI upgrade code. Each
+      # release publishes it; a release in which it changed is refused, because its
+      # packages could not upgrade the installations of the earlier releases.
+      - name: Check the product identity against the last release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PROJECT_NAME: ${{ steps.version.outputs.name }}
+        shell: bash
+        run: |
+          upgrade_guid="$(grep -oP 'set\(PRODUCT_WIX_UPGRADE_GUID "\K[^"]+' cmake/product_identity.cmake)"
+          if [[ -z "$PROJECT_NAME" || -z "$upgrade_guid" ]]; then
+            echo "Could not read the project name or the MSI upgrade code" >&2
+            exit 1
+          fi
+          printf 'name=%s\nwix_upgrade_guid=%s\n' "$PROJECT_NAME" "$upgrade_guid" > product-identity.txt
+          cat product-identity.txt
+
+          last_tag="$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName // empty')"
+          if [[ -z "$last_tag" ]]; then
+            echo "No earlier release: this release records the product identity."
+            exit 0
+          fi
+          if ! gh release view "$last_tag" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | grep -qx product-identity.txt; then
+            echo "::notice::Release $last_tag has no product-identity.txt; this release records the product identity."
+            exit 0
+          fi
+          gh release download "$last_tag" --repo "$GITHUB_REPOSITORY" --pattern product-identity.txt --dir last-release
+          if diff -u last-release/product-identity.txt product-identity.txt; then
+            echo "Product identity unchanged since $last_tag."
+          elif [[ "${{ vars.ALLOW_PRODUCT_IDENTITY_CHANGE }}" == "true" ]]; then
+            echo "::warning::The product identity changed since $last_tag (allowed by ALLOW_PRODUCT_IDENTITY_CHANGE)."
+          else
+            echo "::error::The product identity changed since $last_tag (see the diff above). The packages of this release would not upgrade existing installations: restore the project name and PRODUCT_WIX_UPGRADE_GUID in cmake/product_identity.cmake. If this really is meant to become a new product, set the repository variable ALLOW_PRODUCT_IDENTITY_CHANGE=true for this release."
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: product-identity
+          path: product-identity.txt
+          retention-days: 1
 
   build-packages:
     needs: validate_version
     strategy:
       matrix:
         os: [ubuntu-24.04, windows-latest]
-        library-type: [shared, static]
+        # shared: app + library DLL/.so + SDK; standalone: the self-contained app only
+        delivery-mode: [shared, standalone]
         include:
           - os: ubuntu-24.04
             workflow-prefix: workflow-package-gcc
@@ -81,6 +129,10 @@ jobs:
             artifact-path: out/packages/package-msvc-release
 
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write      # artifact attestations
+      attestations: write  # artifact attestations
 
     steps:
       - uses: actions/checkout@v4
@@ -101,23 +153,134 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: choco install wixtoolset -y
 
-      - name: Create ${{ matrix.library-type }} package
+      # Windows code signing (see "Signing" in ReadMe.md). Without the repository
+      # variable WINDOWS_SIGNTOOL_ARGS the packages stay unsigned. To connect a
+      # signing service, add its setup step here (e.g. azure/login plus the Trusted
+      # Signing client), then set WINDOWS_SIGNTOOL_ARGS and WINDOWS_SIGNING_REQUIRED.
+
+      - name: Create ${{ matrix.delivery-mode }} package
+        env:
+          WINDOWS_SIGNTOOL_ARGS: ${{ vars.WINDOWS_SIGNTOOL_ARGS }}
+          WINDOWS_SIGNING_REQUIRED: ${{ vars.WINDOWS_SIGNING_REQUIRED }}
         run: |
-          cmake --workflow --preset ${{ matrix.workflow-prefix }}-${{ matrix.library-type }}
+          cmake --workflow --preset ${{ matrix.workflow-prefix }}-${{ matrix.delivery-mode }}
         shell: bash
 
-      - name: Upload ${{ matrix.os }} ${{ matrix.library-type }} artifacts
+      # Signed statement, stored by GitHub, that these files were built by this
+      # workflow from this commit. Verify with: gh attestation verify <file> --repo <owner>/<repo>
+      - name: Attest the build provenance of the packages
+        if: github.event_name == 'push'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ github.workspace }}/${{ matrix.artifact-path }}-${{ matrix.delivery-mode }}/*.*
+
+      - name: Upload ${{ matrix.os }} ${{ matrix.delivery-mode }} artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-${{ matrix.library-type }}-build
-          path: ${{ github.workspace }}/${{ matrix.artifact-path }}-${{ matrix.library-type }}/*.*
+          name: ${{ matrix.os }}-${{ matrix.delivery-mode }}-build
+          path: ${{ github.workspace }}/${{ matrix.artifact-path }}-${{ matrix.delivery-mode }}/*.*
           retention-days: 1
+
+  # Install and run the produced packages the way a user would, on a machine that
+  # never saw the build. A broken package never gets published.
+  verify-packages:
+    needs:
+      - validate_version
+      - build-packages
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+        delivery-mode: [shared, standalone]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      attestations: read
+    env:
+      PROJECT_NAME: ${{ needs.validate_version.outputs.name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.delivery-mode }}-build
+          path: packages
+
+      - name: Verify the attestations of the packages
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for file in packages/*.*; do
+            gh attestation verify "$file" --repo "$GITHUB_REPOSITORY"
+          done
+        shell: bash
+
+      - name: Install the DEB packages in a clean Ubuntu container and run the app
+        if: runner.os == 'Linux'
+        run: |
+          # Only the application packages: the dev package is checked below.
+          debs=$(ls packages/*.deb | grep -v -- '-dev_' | sed 's|^packages/|/packages/|' | tr '\n' ' ')
+          docker run --rm -v "$PWD/packages:/packages:ro" ubuntu:24.04 bash -euxc "
+            apt-get update
+            apt-get install -y --no-install-recommends $debs
+            ${PROJECT_NAME}_app"
+        shell: bash
+
+      - name: Run the app from the TGZ archive
+        if: runner.os == 'Linux'
+        run: |
+          mkdir archive
+          tar xzf packages/*.tar.gz -C archive --strip-components=1
+          "./archive/bin/${PROJECT_NAME}_app"
+        shell: bash
+
+      - name: Build against the installed SDK DEB (shared only)
+        if: runner.os == 'Linux' && matrix.delivery-mode == 'shared'
+        run: |
+          sudo apt-get install -y ./packages/lib${PROJECT_NAME}[0-9]*_*.deb ./packages/lib${PROJECT_NAME}-dev_*.deb
+          # No vcpkg and no CMAKE_PREFIX_PATH: find_package() finds the package in /usr.
+          cmake -S test/test_install/consumer -B consumer-build -DCMAKE_BUILD_TYPE=Release -DPACKAGE_NAME=${PROJECT_NAME}
+          cmake --build consumer-build
+          ./consumer-build/consumer
+        shell: bash
+
+      - name: Install the MSI silently and run the app
+        if: runner.os == 'Windows'
+        run: |
+          $msi = (Get-ChildItem packages\*.msi).FullName
+          $dir = Join-Path $env:RUNNER_TEMP 'msi-install'
+          $p = Start-Process msiexec.exe -Wait -PassThru -ArgumentList @('/i', "`"$msi`"", '/qn', 'ALLUSERS=1', "APPLICATIONFOLDER=`"$dir`"", '/l*v', 'msi.log')
+          if ($p.ExitCode -ne 0) { Get-Content msi.log -Tail 50; exit $p.ExitCode }
+          if ('${{ vars.WINDOWS_SIGNTOOL_ARGS }}' -ne '') {
+            foreach ($file in @($msi, "$dir\bin\$($env:PROJECT_NAME)_app.exe")) {
+              $signature = Get-AuthenticodeSignature $file
+              if ($signature.Status -ne 'Valid') { Write-Error "Not validly signed ($($signature.Status)): $file"; exit 1 }
+            }
+          }
+          & "$dir\bin\$($env:PROJECT_NAME)_app.exe"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        shell: pwsh
+
+      - name: Run the app from the ZIP archive
+        if: runner.os == 'Windows'
+        run: |
+          Expand-Archive (Get-ChildItem packages\*.zip).FullName -DestinationPath archive
+          $bin = (Get-ChildItem archive -Directory)[0].FullName + '\bin'
+          Get-ChildItem $bin
+          if ('${{ matrix.delivery-mode }}' -eq 'shared' -and -not (Test-Path "$bin\vcruntime140.dll")) {
+            Write-Error 'The shared package must ship the app-local MSVC runtime'; exit 1
+          }
+          & "$bin\$($env:PROJECT_NAME)_app.exe"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        shell: pwsh
 
   create-release:
     if: github.event_name == 'push'
     needs:
       - validate_version
       - build-packages
+      - verify-packages
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -149,8 +312,9 @@ jobs:
           body: ${{ steps.git_cliff.outputs.content }}
           files: |
             ubuntu-24.04-shared-build/*
-            ubuntu-24.04-static-build/*
+            ubuntu-24.04-standalone-build/*
             windows-latest-shared-build/*
-            windows-latest-static-build/*
+            windows-latest-standalone-build/*
+            product-identity/product-identity.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -16,15 +16,17 @@ jobs:
       fail-fast: true
       matrix:
         build_type: [debug, release]
-        library_type: [shared]
+        delivery_mode: [shared]
         include:
-          # Test static libraries only in release build to minimize CI time
+          # Test the standalone delivery mode only in release builds to minimize CI time
           - build_type: release
-            library_type: static
+            delivery_mode: standalone
         exclude:
           # For develop-* branches, run only msvc+debug+shared
           - build_type: ${{ startsWith(github.ref, 'refs/heads/develop-') && 'release' || '_no_match_' }}
-    name: Build - msvc - ${{ matrix.build_type }} - ${{ matrix.library_type }}
+    name: Build - msvc - ${{ matrix.build_type }} - ${{ matrix.delivery_mode }}
+    env:
+      PRESET_SUFFIX: ${{ matrix.build_type }}${{ matrix.delivery_mode == 'standalone' && '-standalone' || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,9 +43,8 @@ jobs:
         run: |
           # vcpkg may download source archives while configuring. GitHub occasionally
           # returns transient errors, so retry the configure step with backoff.
-          $shared = if ('${{ matrix.library_type }}' -eq 'shared') { 'ON' } else { 'OFF' }
           for ($attempt = 1; $attempt -le 5; $attempt++) {
-            cmake --preset conf-msvc-${{ matrix.build_type }} -DBUILD_SHARED_LIBS=$shared
+            cmake --preset conf-msvc-$env:PRESET_SUFFIX
             if ($LASTEXITCODE -eq 0) { break }
             if ($attempt -eq 5) { exit 1 }
             Start-Sleep -Seconds ($attempt * 30)
@@ -52,12 +53,12 @@ jobs:
       
       - name: Build
         run: |
-          cmake --build --preset build-msvc-${{ matrix.build_type }}
+          cmake --build --preset build-msvc-$env:PRESET_SUFFIX
         shell: pwsh
       
       - name: Test
         run: |
-          ctest --preset test-msvc-${{ matrix.build_type }}
+          ctest --preset test-msvc-$env:PRESET_SUFFIX
         shell: pwsh
   
   windows-build-summary:

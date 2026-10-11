@@ -1,106 +1,63 @@
-set(test_target "cpplib")
-set(${test_target}_TEST_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/${test_target}_install_dir")
-set(${test_target}_TEST_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/${test_target}_use_install_test")
-set(${test_target}_TEMPLATE_PROJECT_DIR_NAME "${test_target}_install_test_template")
+# Installs the library SDK (components runtime + dev) into a temporary prefix and
+# builds a separate consumer project (consumer/) against it with find_package().
+#
+# The consumer is configured WITHOUT vcpkg and without the presets: it proves
+# that the installed package is self-contained (no find_dependency(fmt), no
+# third-party DLLs). Compiler, flags and CRT are forwarded from this build so the
+# consumer matches it (e.g. sanitizer flags, -stdlib, /MD vs /MT).
+set(test_target ${${PROJECT_NAME}_LIBRARY_TARGET})
+set(install_dir "${CMAKE_CURRENT_BINARY_DIR}/install_dir")
+set(consumer_dir "${CMAKE_CURRENT_BINARY_DIR}/consumer")
+set(template_dir "${CMAKE_CURRENT_LIST_DIR}/consumer")
 
-set(PRESET "")
+set(consumer_configure_args
+        -S "${template_dir}"
+        -B "${consumer_dir}/build"
+        -G "${CMAKE_GENERATOR}"
+        "-DPACKAGE_NAME=${PROJECT_NAME}"
+        "-DCMAKE_PREFIX_PATH=${install_dir}"
+        "-DCMAKE_BUILD_TYPE=$<CONFIG>"
+        "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+        "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
+        "-DCMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
+if (CMAKE_GENERATOR_PLATFORM)
+    list(APPEND consumer_configure_args -A "${CMAKE_GENERATOR_PLATFORM}")
+endif ()
+if (CMAKE_GENERATOR_TOOLSET)
+    list(APPEND consumer_configure_args -T "${CMAKE_GENERATOR_TOOLSET}")
+endif ()
+if (CMAKE_MAKE_PROGRAM)
+    list(APPEND consumer_configure_args "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}")
+endif ()
 if (MSVC)
-    set(PRESET "conf-msvc")
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(PRESET "conf-clang")
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(PRESET "conf-gcc")
-else ()
-    message(AUTHOR_WARNING "Unsupported compiler")
+    list(APPEND consumer_configure_args "-DCMAKE_MSVC_RUNTIME_LIBRARY=${CMAKE_MSVC_RUNTIME_LIBRARY}")
 endif ()
-
-string(TOLOWER "${CMAKE_BUILD_TYPE}" CONFIG_LOWER)
-set(PRESET "${PRESET}-${CONFIG_LOWER}")
-
-# Detect if sanitizers are enabled and adjust preset accordingly
-if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address" OR CMAKE_EXE_LINKER_FLAGS MATCHES "-fsanitize=address")
-    set(PRESET "${PRESET}-asan")
-    message(STATUS "Detected AddressSanitizer, using preset: ${PRESET}")
-elseif(CMAKE_CXX_FLAGS MATCHES "-fsanitize=thread" OR CMAKE_EXE_LINKER_FLAGS MATCHES "-fsanitize=thread")
-    set(PRESET "${PRESET}-tsan")
-    message(STATUS "Detected ThreadSanitizer, using preset: ${PRESET}")
-elseif(CMAKE_CXX_FLAGS MATCHES "-fsanitize=undefined" OR CMAKE_EXE_LINKER_FLAGS MATCHES "-fsanitize=undefined")
-    set(PRESET "${PRESET}-ubsan")
-    message(STATUS "Detected UndefinedBehaviorSanitizer, using preset: ${PRESET}")
-endif()
-
-set(EXE_POSTFIX "")
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(EXE_POSTFIX "d")
-endif()
-
-message(STATUS "Using preset: ${PRESET}")
-
-# Check if the test template project directory exists
-if (NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/${${test_target}_TEMPLATE_PROJECT_DIR_NAME}/CMakeLists.txt")
-    message(FATAL_ERROR "The test template project directory '${${test_target}_TEMPLATE_PROJECT_DIR_NAME}' does not exist or is missing a CMakeLists.txt file.")
-    return()
-endif ()
-
-if(NOT CMAKE_BUILD_TYPE)
-    message(FATAL_ERROR "CMAKE_BUILD_TYPE must be set for test_install target")
-endif()
 
 add_custom_target(test_install
         DEPENDS ${test_target}
-        COMMAND ${CMAKE_COMMAND} --install ${PROJECT_BINARY_DIR} --config ${CMAKE_BUILD_TYPE} --prefix ${${test_target}_TEST_INSTALL_DIR}
+        COMMAND ${CMAKE_COMMAND} -E rm -rf "${install_dir}"
+        COMMAND ${CMAKE_COMMAND} --install "${PROJECT_BINARY_DIR}" --config $<CONFIG> --prefix "${install_dir}" --component runtime
+        COMMAND ${CMAKE_COMMAND} --install "${PROJECT_BINARY_DIR}" --config $<CONFIG> --prefix "${install_dir}" --component dev
 
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_CURRENT_LIST_DIR}/${${test_target}_TEMPLATE_PROJECT_DIR_NAME}"
-        ${${test_target}_TEST_SOURCE_DIR}
+        COMMAND ${CMAKE_COMMAND} ${consumer_configure_args}
+        COMMAND ${CMAKE_COMMAND} --build "${consumer_dir}/build" --config $<CONFIG> --parallel
+        COMMAND ${CMAKE_COMMAND} --install "${consumer_dir}/build" --config $<CONFIG> --prefix "${consumer_dir}/install"
 
-        # Copy the main project's CMakePresets.json to ensure identical configuration
-        COMMAND ${CMAKE_COMMAND} -E copy
-        "${PROJECT_SOURCE_DIR}/CMakePresets.json"
-        "${${test_target}_TEST_SOURCE_DIR}/CMakePresets.json"
-
-        # Reuse the main build's already-provisioned vcpkg installed tree so the
-        # nested consumer configure does NOT re-resolve/rebuild dependencies (e.g.
-        # fmt) from scratch in a temp dir. A fresh manifest install here is slow and
-        # can block on network / a vcpkg lock / a prompt in a headless CI runner,
-        # which is what made this test appear to hang.
-        COMMAND ${CMAKE_COMMAND}
-        -B ${${test_target}_TEST_SOURCE_DIR}/build
-        -S ${${test_target}_TEST_SOURCE_DIR}
-        --preset "${PRESET}"
-        -DCMAKE_PREFIX_PATH=${${test_target}_TEST_INSTALL_DIR}
-        -DVCPKG_INSTALLED_DIR=${PROJECT_BINARY_DIR}/vcpkg_installed
-
-        COMMAND ${CMAKE_COMMAND}
-        --build ${${test_target}_TEST_SOURCE_DIR}/build
-        --config ${CMAKE_BUILD_TYPE}
-        --parallel
-
-        COMMAND ${CMAKE_COMMAND}
-        --install ${${test_target}_TEST_SOURCE_DIR}/build
-        --config ${CMAKE_BUILD_TYPE}
-        --prefix ${${test_target}_TEST_SOURCE_DIR}/install
-
-        COMMAND ${CMAKE_COMMAND}
-        -E echo "Running the installed test executable..."
-
-        COMMAND ${${test_target}_TEST_SOURCE_DIR}/install/bin/use_installdir${EXE_POSTFIX}
-        
-        # Check the return code of the executable is 1 as a proxy for success of using the installed project. 
-        # add_custom_target will fail if any command returns a non-zero exit code.
-        COMMAND ${CMAKE_COMMAND}
-        -E echo "Installation test PASSED: Executable ran successfully"
+        COMMAND ${CMAKE_COMMAND} -E echo "Running the installed consumer executable..."
+        # add_custom_target fails if any command returns a non-zero exit code.
+        COMMAND "${consumer_dir}/install/${CMAKE_INSTALL_BINDIR}/consumer$<$<CONFIG:Debug>:d>${CMAKE_EXECUTABLE_SUFFIX}"
+        COMMAND ${CMAKE_COMMAND} -E echo "Installation test PASSED: Executable ran successfully"
+        VERBATIM
 )
 
 add_custom_target(test_install_clean
-        ${CMAKE_COMMAND} -E rm -Rf ${${test_target}_TEST_INSTALL_DIR}
-        COMMAND ${CMAKE_COMMAND} -E rm -Rf ${${test_target}_TEST_SOURCE_DIR}
+        COMMAND ${CMAKE_COMMAND} -E rm -rf "${install_dir}" "${consumer_dir}"
+        VERBATIM
 )
 
-add_test(NAME TestcpplibInstall
-        COMMAND ${CMAKE_COMMAND} --build "${CMAKE_BINARY_DIR}" --target test_install --config ${CMAKE_BUILD_TYPE})
+add_test(NAME Test${PROJECT_NAME}Install
+        COMMAND ${CMAKE_COMMAND} --build "${CMAKE_BINARY_DIR}" --target test_install --config $<CONFIG>)
 
-# Guardrail: this test drives a nested configure/build. If it stalls (e.g. a vcpkg
-# step blocking on network or a lock), fail deterministically instead of hanging the
-# whole CI job until the runner-level timeout.
-set_tests_properties(TestcpplibInstall PROPERTIES TIMEOUT 600)
+# Guardrail: this test drives a nested configure/build. If it stalls, fail
+# deterministically instead of hanging the whole CI job until the runner-level timeout.
+set_tests_properties(Test${PROJECT_NAME}Install PROPERTIES TIMEOUT 600)

@@ -7,14 +7,9 @@ set(CMAKE_MAP_IMPORTED_CONFIG_MINSIZEREL MinSizeRel RelWithDebInfo Release Debug
 set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO RelWithDebInfo Release MinSizeRel Debug "")
 set(CMAKE_MAP_IMPORTED_CONFIG_RELEASE Release RelWithDebInfo MinSizeRel Debug "")
 
-# Find dependencies (add find_dependency() calls here for any required packages)
-include(CMakeFindDependencyMacro)
-
-# fmt is linked PRIVATE, but a STATIC cpplib archive does not absorb its
-# dependencies: consumers linking the static library must still resolve fmt's
-# symbols, and CMake records fmt::fmt in the exported link interface. Re-find it
-# so find_package(cpplib) works for both the shared and static variants.
-find_dependency(fmt CONFIG)
+# No find_dependency() calls: cpplib links its third-party dependencies statically
+# and build-only ($<BUILD_LOCAL_INTERFACE:...>), so the installed shared library
+# is self-contained and consumers need nothing but this package.
 
 # Include the targets file
 include("${CMAKE_CURRENT_LIST_DIR}/@project_name@Targets.cmake")

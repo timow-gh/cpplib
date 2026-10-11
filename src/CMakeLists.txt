@@ -1,11 +1,10 @@
 include(GNUInstallDirs)
 
-# fmt is provided through vcpkg (see vcpkg.json). It is used only in the
-# implementation, so it is linked PRIVATE below and does not leak into the
-# installed/exported interface.
+# fmt is provided through vcpkg (see vcpkg.json) as a static library. It is an
+# implementation detail of cpplib, see the target_link_libraries() call below.
 find_package(fmt CONFIG REQUIRED)
 
-set(TARGET_NAME cpplib)
+set(TARGET_NAME ${${PROJECT_NAME}_LIBRARY_TARGET})
 add_library(${TARGET_NAME})
 
 target_sources(${TARGET_NAME}
@@ -27,8 +26,15 @@ set_target_properties(${TARGET_NAME}
 
 add_library(${PROJECT_NAME}::${TARGET_NAME} ALIAS ${TARGET_NAME})
 
-# PRIVATE: fmt is an implementation detail; consumers of cpplib do not need it.
-target_link_libraries(${TARGET_NAME} PRIVATE fmt::fmt)
+# Third-party dependencies are static and build-only:
+# - PRIVATE keeps fmt out of cpplib's public usage requirements.
+# - $<BUILD_LOCAL_INTERFACE:...> keeps fmt out of the installed export set, so the
+#   installed cpplib package has no find_dependency(fmt).
+# Shared cpplib: the static fmt archive is linked into cpplib.dll / libcpplib.so.
+# Static cpplib: every target of this build that links cpplib (e.g. cpplib_app)
+# also links fmt, so the executable is self-contained. A static cpplib is never
+# installed, because its export set would lack fmt (see the install block below).
+target_link_libraries(${TARGET_NAME} PRIVATE $<BUILD_LOCAL_INTERFACE:fmt::fmt>)
 
 include(GenerateExportHeader)
 set(EXPORT_HEADER_BASE_NAME "${TARGET_NAME}")
@@ -66,7 +72,15 @@ if (DEFINED ${PROJECT_NAME}_STATIC_ANALYSIS AND ${PROJECT_NAME}_STATIC_ANALYSIS)
     enable_static_analysis(${TARGET_NAME} "${${PROJECT_NAME}_WARNINGS_AS_ERRORS}")
 endif ()
 
-if (${PROJECT_NAME}_INSTALL)
+# The library SDK (runtime + dev components) is installed for shared builds only.
+# A static cpplib would need its static third-party dependencies (fmt) installed
+# and re-found as well; that is deliberately not supported. Static builds ship
+# the standalone application instead (see app/CMakeLists.txt).
+if (${PROJECT_NAME}_INSTALL AND NOT BUILD_SHARED_LIBS)
+    message(STATUS "${TARGET_NAME}: static build, the library SDK is not installed (only the standalone application)")
+endif ()
+
+if (${PROJECT_NAME}_INSTALL AND BUILD_SHARED_LIBS)
     include(CMakePackageConfigHelpers)
     
     set(project_export_set_name "${PROJECT_NAME}TargetsExportSet")
@@ -80,6 +94,8 @@ if (${PROJECT_NAME}_INSTALL)
             COMPONENT runtime
             LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
             COMPONENT runtime
+            # The unversioned libcpplib.so symlink is only needed to link against cpplib.
+            NAMELINK_COMPONENT dev
             ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
             COMPONENT dev
             FILE_SET HEADERS
