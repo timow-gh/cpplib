@@ -129,6 +129,10 @@ jobs:
             artifact-path: out/packages/package-msvc-release
 
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write      # artifact attestations
+      attestations: write  # artifact attestations
 
     steps:
       - uses: actions/checkout@v4
@@ -149,10 +153,26 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: choco install wixtoolset -y
 
+      # Windows code signing (see "Signing" in ReadMe.md). Without the repository
+      # variable WINDOWS_SIGNTOOL_ARGS the packages stay unsigned. To connect a
+      # signing service, add its setup step here (e.g. azure/login plus the Trusted
+      # Signing client), then set WINDOWS_SIGNTOOL_ARGS and WINDOWS_SIGNING_REQUIRED.
+
       - name: Create ${{ matrix.delivery-mode }} package
+        env:
+          WINDOWS_SIGNTOOL_ARGS: ${{ vars.WINDOWS_SIGNTOOL_ARGS }}
+          WINDOWS_SIGNING_REQUIRED: ${{ vars.WINDOWS_SIGNING_REQUIRED }}
         run: |
           cmake --workflow --preset ${{ matrix.workflow-prefix }}-${{ matrix.delivery-mode }}
         shell: bash
+
+      # Signed statement, stored by GitHub, that these files were built by this
+      # workflow from this commit. Verify with: gh attestation verify <file> --repo <owner>/<repo>
+      - name: Attest the build provenance of the packages
+        if: github.event_name == 'push'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ github.workspace }}/${{ matrix.artifact-path }}-${{ matrix.delivery-mode }}/*.*
 
       - name: Upload ${{ matrix.os }} ${{ matrix.delivery-mode }} artifacts
         uses: actions/upload-artifact@v4
@@ -172,6 +192,9 @@ jobs:
         os: [ubuntu-24.04, windows-latest]
         delivery-mode: [shared, standalone]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      attestations: read
     env:
       PROJECT_NAME: ${{ needs.validate_version.outputs.name }}
 
@@ -182,6 +205,16 @@ jobs:
         with:
           name: ${{ matrix.os }}-${{ matrix.delivery-mode }}-build
           path: packages
+
+      - name: Verify the attestations of the packages
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for file in packages/*.*; do
+            gh attestation verify "$file" --repo "$GITHUB_REPOSITORY"
+          done
+        shell: bash
 
       - name: Install the DEB packages in a clean Ubuntu container and run the app
         if: runner.os == 'Linux'
@@ -219,6 +252,12 @@ jobs:
           $dir = Join-Path $env:RUNNER_TEMP 'msi-install'
           $p = Start-Process msiexec.exe -Wait -PassThru -ArgumentList @('/i', "`"$msi`"", '/qn', 'ALLUSERS=1', "APPLICATIONFOLDER=`"$dir`"", '/l*v', 'msi.log')
           if ($p.ExitCode -ne 0) { Get-Content msi.log -Tail 50; exit $p.ExitCode }
+          if ('${{ vars.WINDOWS_SIGNTOOL_ARGS }}' -ne '') {
+            foreach ($file in @($msi, "$dir\bin\$($env:PROJECT_NAME)_app.exe")) {
+              $signature = Get-AuthenticodeSignature $file
+              if ($signature.Status -ne 'Valid') { Write-Error "Not validly signed ($($signature.Status)): $file"; exit 1 }
+            }
+          }
           & "$dir\bin\$($env:PROJECT_NAME)_app.exe"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         shell: pwsh

@@ -192,8 +192,8 @@ the package names play this role.
 
 - **It is not a secret.** It is part of every MSI and of the registry of every
   machine the product is installed on. Protection against fake or modified
-  installers comes from code signing and trusted download channels (GitHub
-  Releases with `.sha256` checksums), not from the upgrade code.
+  installers comes from signing (see "Signing") and trusted download channels,
+  not from the upgrade code.
 - **It must never change after the first release.** With a different upgrade code
   (or project name), the next MSI (or DEB) becomes a separate product that
   installs next to the old version instead of upgrading it.
@@ -286,6 +286,67 @@ The shared and standalone MSIs share one upgrade GUID, so installing one replace
 the other. The two app DEBs conflict with each other for the same reason: both
 install `cpplib_app`. Both share the upgrade code from design decision 10.
 
+### Signing
+
+There are two layers. Attestations already work for every release. Windows code
+signing is prepared, and switches on once you connect a signing service.
+
+**Build provenance attestations (all release files, active).** For every package
+file, the release workflow creates a signed statement, stored by GitHub, that the
+file was built by this repository's workflow from a specific commit
+(`actions/attest-build-provenance`). It needs no keys or certificates. Anyone can
+verify a downloaded file:
+
+```sh
+gh attestation verify cpplib-0.1.0-linux-x86_64.tar.gz --repo timow-gh/cpplib
+```
+
+The `.sha256` files only detect corrupted downloads. An attestation also proves
+where the file came from. `verify-packages` checks the attestations of every
+release.
+
+**Windows code signing (Authenticode, prepared).**
+- **Why:** unsigned executables and MSIs trigger the SmartScreen warning ("Windows
+  protected your PC"), and some company policies block them. A signature names you
+  as the publisher and proves that the files were not modified.
+- **How it is wired:** `cmake/windows_signing.cmake` runs as a CPack pre- and
+  post-build script. It signs the staged `.exe`/`.dll` files before they are packed
+  into the ZIP and MSI, then signs the MSI before its checksum is written. Files that
+  are already signed, such as the Microsoft-signed MSVC runtime DLLs, are skipped.
+- **Configuration:** environment variables at packaging time. The release workflow
+  fills them from repository variables of the same name.
+
+| Variable | Meaning |
+|---|---|
+| `WINDOWS_SIGNTOOL_ARGS` | The `signtool sign` arguments for your signing service. Empty: signing is skipped and the packages stay unsigned |
+| `WINDOWS_SIGNING_REQUIRED` | `ON`: packaging fails when signing is not configured, so no unsigned release slips out |
+| `WINDOWS_SIGNTOOL` | Optional path of `signtool.exe` (default: newest Windows SDK) |
+
+To connect a signing service:
+1. **Get a code signing certificate through a service that keeps the key in
+   hardware**, which certificate authorities have required since 2023. Options:
+   - [Azure Trusted Signing](https://learn.microsoft.com/azure/trusted-signing/),
+     low cost, from Microsoft;
+   - a certificate authority's cloud HSM, such as DigiCert KeyLocker or SSL.com
+     eSigner;
+   - for open-source projects, the free [SignPath Foundation](https://signpath.org/).
+2. **Add the service's setup step** in `.github/workflows/release.yml` before
+   "Create package", where the comment marks the spot. For Azure Trusted Signing
+   this is `azure/login` (credentials as repository secrets), plus installing the
+   Trusted Signing client, which provides `Azure.CodeSigning.Dlib.dll`, and writing
+   its `metadata.json` (endpoint, account, certificate profile).
+3. **Set the repository variables.** Using Azure Trusted Signing as the example:
+   - `WINDOWS_SIGNTOOL_ARGS` to
+     `/v /fd SHA256 /tr http://timestamp.acs.microsoft.com /td SHA256 /dlib <path>\Azure.CodeSigning.Dlib.dll /dmdf <path>\metadata.json`;
+   - `WINDOWS_SIGNING_REQUIRED` to `ON`.
+
+   From then on, `verify-packages` also checks that the installed MSI and
+   executable carry valid signatures.
+
+Credentials always stay in the signing service and the repository secrets. They
+never enter the repository or the build tree. Unlike the MSI upgrade code (design
+decision 10), signing credentials are secret.
+
 ## Using the library from another project
 
 The shared packages contain the SDK (`libcpplib-dev`, or the `include`/`lib`
@@ -345,7 +406,7 @@ Then:
 |---|---|
 | `ubuntu-build.yml`, `windows-build.yml` | Build and test on every push and pull request: debug and release in shared mode, plus release in standalone mode |
 | `ubuntu-sanitizers.yml`, `ubuntu-coverage.yml`, `ubuntu-static-analysis.yml` | ASan/TSan/UBSan, coverage report, clang-tidy |
-| `release.yml` | On a `v*` tag: checks that the tag, `CMakeLists.txt` and `vcpkg.json` versions match, refuses a changed product identity (design decision 10), builds the shared and standalone packages for Linux and Windows, verifies them (`verify-packages`) and publishes a GitHub Release with notes generated by git-cliff |
+| `release.yml` | On a `v*` tag: checks that the tag, `CMakeLists.txt` and `vcpkg.json` versions match, refuses a changed product identity (design decision 10), builds the shared and standalone packages for Linux and Windows (signed on Windows once configured), attests them, verifies them (`verify-packages`) and publishes a GitHub Release with notes generated by git-cliff |
 | `commit-messages.yml` | Enforces Conventional Commits |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions, the local commit hook

@@ -139,6 +139,12 @@ if(WIN32)
            NAME "PathUserComponent" TYPE SHA1 UPPER)
     configure_file("${CMAKE_CURRENT_LIST_DIR}/wix_patch.xml.in" "${CMAKE_BINARY_DIR}/wix_patch.xml" @ONLY)
     set(CPACK_WIX_PATCH_FILE "${CMAKE_BINARY_DIR}/wix_patch.xml")
+
+    # Authenticode signing of the staged .exe/.dll files and of the MSI. Inactive
+    # until a signing service is connected (see cmake/windows_signing.cmake and
+    # "Signing" in ReadMe.md).
+    set(CPACK_PRE_BUILD_SCRIPTS "${CMAKE_CURRENT_LIST_DIR}/windows_signing.cmake")
+    set(CPACK_POST_BUILD_SCRIPTS "${CMAKE_CURRENT_LIST_DIR}/windows_signing.cmake")
 endif()
 
 # Packaging-time settings that depend on the package directory (see the file).
