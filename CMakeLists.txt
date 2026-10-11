@@ -22,7 +22,14 @@ endif ()
 
 project(cpplib
         VERSION 0.0.0
+        DESCRIPTION "A C++ library and application template"
+        HOMEPAGE_URL "https://github.com/timow-gh/cpplib"
         LANGUAGES CXX)
+
+# Every name of this project is derived from the project name: targets, CMake
+# package, export macro, test names, package names, installer folder.
+set(${PROJECT_NAME}_LIBRARY_TARGET ${PROJECT_NAME})
+set(${PROJECT_NAME}_APP_TARGET ${PROJECT_NAME}_app)
 
 include(warnings)
 include(static_analysis)
@@ -42,7 +49,7 @@ if (PROJECT_IS_TOP_LEVEL)
     option(${PROJECT_NAME}_STATIC_ANALYSIS "" ON)
     option(${PROJECT_NAME}_USE_CPPCHECK "" OFF)
     option(${PROJECT_NAME}_TESTS "" ON)
-    option(${PROJECT_NAME}_APP "Build the cpplib_app application" ON)
+    option(${PROJECT_NAME}_APP "Build the ${PROJECT_NAME}_app application" ON)
     option(${PROJECT_NAME}_PACK "Create release packages" ON)
 else ()
     option(${PROJECT_NAME}_USE_SCCACHE "Use sccache" OFF)
@@ -51,7 +58,7 @@ else ()
     option(${PROJECT_NAME}_STATIC_ANALYSIS "" OFF)
     option(${PROJECT_NAME}_USE_CPPCHECK "" OFF)
     option(${PROJECT_NAME}_TESTS "" OFF)
-    option(${PROJECT_NAME}_APP "Build the cpplib_app application" OFF)
+    option(${PROJECT_NAME}_APP "Build the ${PROJECT_NAME}_app application" OFF)
     option(${PROJECT_NAME}_PACK "Create release packages" OFF)
 endif ()
 
@@ -82,7 +89,7 @@ endif ()
 # same CRT, otherwise linking fails with LNK2038. The vcpkg triplet chosen by the
 # preset decides:
 #   x64-windows-static    -> static CRT  (/MT): standalone builds, one .exe
-#   x64-windows-static-md -> dynamic CRT (/MD): shared builds, .exe + cpplib.dll
+#   x64-windows-static-md -> dynamic CRT (/MD): shared builds, .exe + library DLL
 #                            + app-local vcruntime140/msvcp140 (see app/CMakeLists.txt)
 # Both triplets build the third-party libraries themselves as static libraries.
 # Must be set before any targets are created.

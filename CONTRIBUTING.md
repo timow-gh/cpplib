@@ -85,7 +85,9 @@ The release workflow verifies that the tag version matches
 `project(cpplib VERSION ...)` in `CMakeLists.txt` and the `version` in
 `vcpkg.json`, builds the shared and standalone packages, installs and runs them
 (`verify-packages`), generates the GitHub Release body with `git-cliff`, and
-uploads the package artifacts.
+uploads the package artifacts. It refuses to publish a release whose product
+identity (project name, MSI upgrade code) differs from the last release, see
+"Product identity and the MSI upgrade code" in the README.
 
 Create `v0.1.0` as the baseline tag for the current history. After that,
 release notes are generated from Conventional Commits since the previous `v*`

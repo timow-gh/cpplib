@@ -34,6 +34,8 @@ cmake --workflow --preset workflow-test-gcc-release   # or -clang- / -msvc-
 | `app/` | The application `cpplib_app` |
 | `test/` | Unit tests (GoogleTest), the delivery check and the SDK install test |
 | `cmake/` | Helper modules: warnings, static analysis, packaging, WiX installer files |
+| `cmake/product_identity.cmake` | Vendor, contact and the MSI upgrade code of the product (design decision 10) |
+| `tools/` | `create_new_product.cmake` to start a new product from the template; git hook installers; clang-format helper |
 | `dependencies/` | Test-only dependencies fetched with [CPM](https://github.com/cpm-cmake/CPM.cmake) (GoogleTest) |
 | `vcpkg.json` | Third-party dependencies of the library and the application (`fmt`) |
 | `CMakePresets.json` | All configure, build, test, package and workflow presets |
@@ -161,8 +163,48 @@ the same behavior.
 | Test | What it checks |
 |---|---|
 | `TestcpplibDelivery` (`test/test_delivery/`) | Installs the application's components into a temporary prefix. Checks that the installed files match the expected list for the delivery mode, runs the installed app, and checks with `file(GET_RUNTIME_DEPENDENCIES)` that it only depends on system libraries, cpplib and the MSVC runtime. A third-party DLL fails the test. |
-| `TestcpplibInstall` (`test/test_install/`, shared only) | Installs the SDK. Builds a separate consumer project against it **without vcpkg**, and runs it. |
+| `TestcpplibInstall` (`test/test_install/`, shared only) | Installs the SDK. Builds a separate consumer project (`test/test_install/consumer/`) against it **without vcpkg**, and runs it. |
 | Release `verify-packages` job | Installs the real DEBs in a clean `ubuntu:24.04` container and the MSI silently on Windows, runs the app from the TGZ and ZIP, and builds against the `-dev` DEB. A release is only published when this job passes. |
+
+### 9. Every name derives from the project name
+
+The project name in `project(cpplib ...)` is the only place the name is set. Everything
+else follows from it:
+- the library target and CMake package (`cpplib`, `cpplib::cpplib`, `find_package(cpplib)`);
+- the export macro (`CPPLIB_EXPORT`, generated);
+- the application target (`cpplib_app`);
+- the options (`cpplib_TESTS`, …) and test names (`TestcpplibDelivery`, …);
+- the package names (`cpplib-app`, `libcpplib0`, `libcpplib-dev`);
+- the installer folder and registry key;
+- the names the release workflow uses.
+
+Description and homepage are also set in `project()`. Only what is source code
+contains the name literally: the C++ namespace, the header directory, the source
+file names and the include rule in `.clang-format`.
+`tools/create_new_product.cmake` renames those (see "Making it your own").
+
+### 10. Product identity and the MSI upgrade code
+
+`cmake/product_identity.cmake` holds the vendor, the contact and the **MSI upgrade
+code**, a random GUID. Windows Installer uses the upgrade code to recognize a new
+MSI as an upgrade of an installed earlier version of the same product. On Linux,
+the package names play this role.
+
+- **It is not a secret.** It is part of every MSI and of the registry of every
+  machine the product is installed on. Protection against fake or modified
+  installers comes from code signing and trusted download channels (GitHub
+  Releases with `.sha256` checksums), not from the upgrade code.
+- **It must never change after the first release.** With a different upgrade code
+  (or project name), the next MSI (or DEB) becomes a separate product that
+  installs next to the old version instead of upgrading it.
+- **The release workflow guards it.** Every release publishes a
+  `product-identity.txt` (project name and upgrade code). The next release compares
+  its own identity with the last release's file and refuses to publish if it
+  changed. To intentionally turn the repository into a new product, set the
+  repository variable `ALLOW_PRODUCT_IDENTITY_CHANGE=true` for that release.
+- **The component GUIDs are derived from the upgrade code.** The installer's own
+  component GUIDs (in `cmake/wix_patch.xml.in`) are computed from the upgrade code,
+  so there is exactly one GUID to keep.
 
 ## Building and testing
 
@@ -242,7 +284,7 @@ How each generator uses them:
 
 The shared and standalone MSIs share one upgrade GUID, so installing one replaces
 the other. The two app DEBs conflict with each other for the same reason: both
-install `cpplib_app`.
+install `cpplib_app`. Both share the upgrade code from design decision 10.
 
 ## Using the library from another project
 
@@ -261,26 +303,41 @@ install the cpplib runtime next to it:
 install(IMPORTED_RUNTIME_ARTIFACTS cpplib::cpplib RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 ```
 
-`test/test_install/cpplib_install_test_template/` is a complete example.
+`test/test_install/consumer/` is a complete example.
 
 ## Making it your own
 
-1. Rename the project:
-   - `project(cpplib ...)` in `CMakeLists.txt` and `name` in `vcpkg.json`;
-   - the `cpplib` namespace, the `src/include/cpplib/` directory, the `CPPLIB_EXPORT`
-     macro and the `cpplib_app` target;
-   - the `cpplib_*` options in the presets.
+Start a new product with the script in `tools/` (it only needs CMake):
+
+```sh
+cmake -DNAME=myapp -DVENDOR="My Company" -DCONTACT="My Company <dev@example.com>" \
+      -DHOMEPAGE="https://github.com/me/myapp" -DDESCRIPTION="My application" \
+      -P tools/create_new_product.cmake
+```
+
+It creates a **new product**:
+- It renames everything named after the current project, both in file contents and
+  in file and directory names. That covers the C++ namespace, the header directory,
+  the export macro, `vcpkg.json` and `.clang-format`; everything else derives from
+  `project()` (design decision 9).
+- It sets the description and homepage in `project()`, and the vendor and contact in
+  `cmake/product_identity.cmake`.
+- It generates a **new MSI upgrade code**.
+
+The result cannot upgrade installations of the product it was created from. That is
+right for a new product, and wrong for one that has been released. So the script
+refuses to run in a repository with release tags (`v*`) unless you pass `-DFORCE=ON`.
+A repository created with GitHub's "Use this template" has no tags.
+
+Then:
+1. Review the changes, commit them, and delete old build directories (`out/`).
 2. Replace the code in `src/` and `app/`, and add your tests under `test/`.
 3. Add third-party libraries to `vcpkg.json` and link them
    `PRIVATE $<BUILD_LOCAL_INTERFACE:...>` (see design decision 1).
-4. Update the package metadata in `cmake/packaging.cmake`: vendor, contact,
-   description, homepage, package names.
-5. Generate a new `CPACK_WIX_UPGRADE_GUID` (and new component GUIDs in
-   `cmake/wix_patch.xml`). After the first release, never change the upgrade GUID
-   again.
-6. Replace `License` and `cmake/License.rtf`.
-7. Bump the version in `CMakeLists.txt` and `vcpkg.json` together, then push a tag
-   `vX.Y.Z` to release (see below).
+4. Replace `License` and `cmake/License.rtf`, and adapt this README.
+5. Bump the version in `CMakeLists.txt` and `vcpkg.json` together, then push a tag
+   `vX.Y.Z` to release (see below). From the first release on, the release workflow
+   guards the product identity (design decision 10).
 
 ## Releases and CI
 
@@ -288,7 +345,7 @@ install(IMPORTED_RUNTIME_ARTIFACTS cpplib::cpplib RUNTIME DESTINATION bin LIBRAR
 |---|---|
 | `ubuntu-build.yml`, `windows-build.yml` | Build and test on every push and pull request: debug and release in shared mode, plus release in standalone mode |
 | `ubuntu-sanitizers.yml`, `ubuntu-coverage.yml`, `ubuntu-static-analysis.yml` | ASan/TSan/UBSan, coverage report, clang-tidy |
-| `release.yml` | On a `v*` tag: checks that the tag, `CMakeLists.txt` and `vcpkg.json` versions match, builds the shared and standalone packages for Linux and Windows, verifies them (`verify-packages`) and publishes a GitHub Release with notes generated by git-cliff |
+| `release.yml` | On a `v*` tag: checks that the tag, `CMakeLists.txt` and `vcpkg.json` versions match, refuses a changed product identity (design decision 10), builds the shared and standalone packages for Linux and Windows, verifies them (`verify-packages`) and publishes a GitHub Release with notes generated by git-cliff |
 | `commit-messages.yml` | Enforces Conventional Commits |
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions, the local commit hook

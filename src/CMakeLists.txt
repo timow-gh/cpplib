@@ -4,7 +4,7 @@ include(GNUInstallDirs)
 # implementation detail of cpplib, see the target_link_libraries() call below.
 find_package(fmt CONFIG REQUIRED)
 
-set(TARGET_NAME cpplib)
+set(TARGET_NAME ${${PROJECT_NAME}_LIBRARY_TARGET})
 add_library(${TARGET_NAME})
 
 target_sources(${TARGET_NAME}

@@ -2,11 +2,12 @@
 # checks that
 #   - the installed file set is the expected one for the delivery mode,
 #   - the installed application runs,
-#   - the application (and cpplib in shared mode) depend on nothing but system
-#     libraries, cpplib itself and, for /MD builds, the app-local MSVC runtime.
+#   - the application (and the library in shared mode) depend on nothing but
+#     system libraries, the library itself and, for /MD builds, the app-local
+#     MSVC runtime.
 # It fails as soon as a third-party library (e.g. fmt) would have to be shipped.
-set(app_target cpplib_app)
-set(lib_target cpplib)
+set(app_target ${${PROJECT_NAME}_APP_TARGET})
+set(lib_target ${${PROJECT_NAME}_LIBRARY_TARGET})
 
 set(expected_files
         "${CMAKE_INSTALL_BINDIR}/$<TARGET_FILE_NAME:${app_target}>"
@@ -38,7 +39,7 @@ string(REPLACE ";" "|" components_arg "${components}")
 string(REPLACE ";" "|" expected_files_arg "${expected_files}")
 string(REPLACE ";" "|" check_files_arg "${check_files}")
 
-add_test(NAME TestcpplibDelivery
+add_test(NAME Test${PROJECT_NAME}Delivery
         COMMAND ${CMAKE_COMMAND}
         "-DBUILD_DIR=${PROJECT_BINARY_DIR}"
         "-DCONFIG=$<CONFIG>"
@@ -50,4 +51,4 @@ add_test(NAME TestcpplibDelivery
         "-DAPP=${CMAKE_INSTALL_BINDIR}/$<TARGET_FILE_NAME:${app_target}>"
         -P "${CMAKE_CURRENT_LIST_DIR}/check_delivery.cmake")
 
-set_tests_properties(TestcpplibDelivery PROPERTIES TIMEOUT 300)
+set_tests_properties(Test${PROJECT_NAME}Delivery PROPERTIES TIMEOUT 300)

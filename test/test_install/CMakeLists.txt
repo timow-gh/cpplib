@@ -1,19 +1,20 @@
 # Installs the library SDK (components runtime + dev) into a temporary prefix and
-# builds a separate consumer project against it with find_package(cpplib).
+# builds a separate consumer project (consumer/) against it with find_package().
 #
 # The consumer is configured WITHOUT vcpkg and without the presets: it proves
 # that the installed package is self-contained (no find_dependency(fmt), no
 # third-party DLLs). Compiler, flags and CRT are forwarded from this build so the
 # consumer matches it (e.g. sanitizer flags, -stdlib, /MD vs /MT).
-set(test_target "cpplib")
-set(install_dir "${CMAKE_CURRENT_BINARY_DIR}/${test_target}_install_dir")
-set(consumer_dir "${CMAKE_CURRENT_BINARY_DIR}/${test_target}_consumer")
-set(template_dir "${CMAKE_CURRENT_LIST_DIR}/${test_target}_install_test_template")
+set(test_target ${${PROJECT_NAME}_LIBRARY_TARGET})
+set(install_dir "${CMAKE_CURRENT_BINARY_DIR}/install_dir")
+set(consumer_dir "${CMAKE_CURRENT_BINARY_DIR}/consumer")
+set(template_dir "${CMAKE_CURRENT_LIST_DIR}/consumer")
 
 set(consumer_configure_args
         -S "${template_dir}"
         -B "${consumer_dir}/build"
         -G "${CMAKE_GENERATOR}"
+        "-DPACKAGE_NAME=${PROJECT_NAME}"
         "-DCMAKE_PREFIX_PATH=${install_dir}"
         "-DCMAKE_BUILD_TYPE=$<CONFIG>"
         "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
@@ -44,7 +45,7 @@ add_custom_target(test_install
 
         COMMAND ${CMAKE_COMMAND} -E echo "Running the installed consumer executable..."
         # add_custom_target fails if any command returns a non-zero exit code.
-        COMMAND "${consumer_dir}/install/${CMAKE_INSTALL_BINDIR}/use_installdir$<$<CONFIG:Debug>:d>${CMAKE_EXECUTABLE_SUFFIX}"
+        COMMAND "${consumer_dir}/install/${CMAKE_INSTALL_BINDIR}/consumer$<$<CONFIG:Debug>:d>${CMAKE_EXECUTABLE_SUFFIX}"
         COMMAND ${CMAKE_COMMAND} -E echo "Installation test PASSED: Executable ran successfully"
         VERBATIM
 )
@@ -54,9 +55,9 @@ add_custom_target(test_install_clean
         VERBATIM
 )
 
-add_test(NAME TestcpplibInstall
+add_test(NAME Test${PROJECT_NAME}Install
         COMMAND ${CMAKE_COMMAND} --build "${CMAKE_BINARY_DIR}" --target test_install --config $<CONFIG>)
 
 # Guardrail: this test drives a nested configure/build. If it stalls, fail
 # deterministically instead of hanging the whole CI job until the runner-level timeout.
-set_tests_properties(TestcpplibInstall PROPERTIES TIMEOUT 600)
+set_tests_properties(Test${PROJECT_NAME}Install PROPERTIES TIMEOUT 600)

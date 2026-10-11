@@ -39,7 +39,7 @@
     },
     {
       "name": "conf-shared",
-      "description": "Delivery mode 'shared': cpplib is a shared library, the app ships as executable + cpplib DLL/.so",
+      "description": "Delivery mode 'shared': the library is a shared library, the app ships as executable + library DLL/.so",
       "hidden": true,
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "ON"
@@ -47,7 +47,7 @@
     },
     {
       "name": "conf-standalone",
-      "description": "Delivery mode 'standalone': cpplib is linked statically, the app ships as a single executable",
+      "description": "Delivery mode 'standalone': the library is linked statically, the app ships as a single executable",
       "hidden": true,
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "OFF"
@@ -69,14 +69,6 @@
       "inherits": "conf-standalone",
       "cacheVariables": {
         "VCPKG_TARGET_TRIPLET": "x64-windows-static"
-      }
-    },
-    {
-      "name": "conf-no-install-test",
-      "description": "Do not register the test that consumes the installed cpplib package",
-      "hidden": true,
-      "cacheVariables": {
-        "cpplib_TEST_INSTALL": "OFF"
       }
     },
     {
@@ -356,10 +348,7 @@
       "name": "conf-coverage-common",
       "description": "Common code coverage settings for Unix-like OS with GCC",
       "hidden": true,
-      "inherits": [
-        "conf-gcc-common",
-        "conf-no-install-test"
-      ],
+      "inherits": "conf-gcc-common",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "--coverage -O0 -g",
         "CMAKE_C_FLAGS": "--coverage -O0 -g",
@@ -1110,7 +1099,7 @@
     {
       "name": "package-gcc-release-shared",
       "displayName": "Unix GCC Release Package (Shared)",
-      "description": "Create TGZ and DEB packages: application + cpplib shared library + SDK",
+      "description": "Create TGZ and DEB packages: application + shared library + SDK",
       "inherits": [
         "package-unix-common",
         "package-release"
@@ -1130,7 +1119,7 @@
     {
       "name": "package-clang-release-shared",
       "displayName": "Unix Clang Release Package (Shared)",
-      "description": "Create TGZ and DEB packages: application + cpplib shared library + SDK",
+      "description": "Create TGZ and DEB packages: application + shared library + SDK",
       "inherits": [
         "package-unix-common",
         "package-release"
@@ -1150,7 +1139,7 @@
     {
       "name": "package-msvc-release-shared",
       "displayName": "Windows MSVC Release Package (Shared)",
-      "description": "Create ZIP and WIX (MSI) packages: application + cpplib shared library + SDK",
+      "description": "Create ZIP and WIX (MSI) packages: application + shared library + SDK",
       "inherits": [
         "package-msvc-common",
         "package-release"

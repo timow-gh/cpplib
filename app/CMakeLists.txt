@@ -7,11 +7,11 @@
 #   *-shared     (BUILD_SHARED_LIBS=ON):  the package contains the executable,
 #       cpplib.dll / libcpplib.so (component "runtime", installed by
 #       src/CMakeLists.txt) and, on Windows, the app-local MSVC runtime DLLs.
-set(TARGET_NAME cpplib_app)
+set(TARGET_NAME ${${PROJECT_NAME}_APP_TARGET})
 
 add_executable(${TARGET_NAME} main.cpp)
 
-target_link_libraries(${TARGET_NAME} PRIVATE ${PROJECT_NAME}::cpplib)
+target_link_libraries(${TARGET_NAME} PRIVATE ${PROJECT_NAME}::${${PROJECT_NAME}_LIBRARY_TARGET})
 
 target_compile_features(${TARGET_NAME} PRIVATE cxx_std_23)
 

@@ -44,11 +44,9 @@
              property WixUI_Advanced drives; alias it to CPack's INSTALL_ROOT
              directory. ApplicationFolderName is the per-user subfolder name and
              the default per-machine folder name under Program Files. -->
-        <!-- ApplicationFolderName: CPACK_PACKAGE_INSTALL_DIRECTORY is not
-             exported as a WiX preprocessor variable, so the folder name is
-             stated literally here. Keep it in sync with
-             CPACK_PACKAGE_INSTALL_DIRECTORY in cmake/packaging.cmake. -->
-        <Property Id="ApplicationFolderName" Value="cpplib"/>
+        <!-- ApplicationFolderName is defined in properties.wxi (included below)
+             from CPACK_WIX_PROPERTY_ApplicationFolderName in
+             cmake/packaging.cmake. -->
         <WixVariable Id="WixUISupportPerUser" Value="1"/>
         <WixVariable Id="WixUISupportPerMachine" Value="1"/>
         <!-- Default the scope selection to all-users (per-machine); the user can

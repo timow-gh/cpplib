@@ -17,11 +17,13 @@ include_guard(GLOBAL)
 
 string(TOLOWER "${PROJECT_NAME}" PKG_NAME)
 
-# Package metadata
-set(CPACK_PACKAGE_VENDOR "${PROJECT_NAME}")
-set(CPACK_PACKAGE_CONTACT "cpplib maintainers <39085531+timow-gh@users.noreply.github.com>")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A C++ library and application template")
-set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/timow-gh/cpplib")
+# Package metadata: name, version, description and homepage come from project(),
+# vendor, contact and the MSI upgrade code from cmake/product_identity.cmake.
+include("${CMAKE_CURRENT_LIST_DIR}/product_identity.cmake")
+set(CPACK_PACKAGE_VENDOR "${PRODUCT_VENDOR}")
+set(CPACK_PACKAGE_CONTACT "${PRODUCT_CONTACT}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PROJECT_DESCRIPTION}")
+set(CPACK_PACKAGE_HOMEPAGE_URL "${PROJECT_HOMEPAGE_URL}")
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
@@ -55,11 +57,11 @@ endif()
 
 # Components
 set(CPACK_COMPONENT_APP_DISPLAY_NAME "Application")
-set(CPACK_COMPONENT_APP_DESCRIPTION "The cpplib_app application")
+set(CPACK_COMPONENT_APP_DESCRIPTION "The ${${PROJECT_NAME}_APP_TARGET} application")
 set(CPACK_COMPONENT_RUNTIME_DISPLAY_NAME "Runtime Libraries")
-set(CPACK_COMPONENT_RUNTIME_DESCRIPTION "The cpplib shared library")
+set(CPACK_COMPONENT_RUNTIME_DESCRIPTION "The ${PROJECT_NAME} shared library")
 set(CPACK_COMPONENT_DEV_DISPLAY_NAME "Development Files")
-set(CPACK_COMPONENT_DEV_DESCRIPTION "Headers, import library and CMake package files to build against cpplib")
+set(CPACK_COMPONENT_DEV_DESCRIPTION "Headers, import library and CMake package files to build against ${PROJECT_NAME}")
 if(BUILD_SHARED_LIBS)
     set(CPACK_COMPONENT_APP_DEPENDS runtime)
     set(CPACK_COMPONENT_DEV_DEPENDS runtime)
@@ -86,7 +88,7 @@ if(BUILD_SHARED_LIBS)
     set(CPACK_DEBIAN_RUNTIME_PACKAGE_SECTION "libs")
     set(CPACK_DEBIAN_DEV_PACKAGE_NAME "lib${PKG_NAME}-dev")
     set(CPACK_DEBIAN_DEV_PACKAGE_SECTION "libdevel")
-    # Both variants install /usr/bin/cpplib_app.
+    # Both variants install the same executable.
     set(CPACK_DEBIAN_APP_PACKAGE_CONFLICTS "${PKG_NAME}-app-standalone")
 else()
     set(CPACK_DEBIAN_APP_PACKAGE_CONFLICTS "${PKG_NAME}-app")
@@ -100,16 +102,13 @@ if(WIN32)
     # a long system PATH.
     set(CPACK_PACKAGE_INSTALL_DIRECTORY "${PROJECT_NAME}")
 
-    # Stable upgrade GUID. Windows Installer uses this to recognize that a new
-    # package is an upgrade of a previously installed cpplib rather than a
-    # separate product. It MUST NEVER CHANGE once released: changing it makes
-    # future versions install side-by-side instead of upgrading in place.
-    # The shared and the standalone MSI deliberately share it: both install the
-    # same application into the same folder, so installing one replaces the other.
-    # CPACK_WIX_PRODUCT_GUID is intentionally left unset so CPack regenerates it
-    # per version, which together with the stable upgrade GUID gives clean
-    # major-upgrade (uninstall-old-then-install-new) behavior.
-    set(CPACK_WIX_UPGRADE_GUID "6E7C3F4B-9A21-4D8E-B5C6-2F0A1D3E4B7C")
+    # Upgrade code from cmake/product_identity.cmake (never change it after the
+    # first release, see there). The shared and the standalone MSI deliberately
+    # share it: both install the same application into the same folder, so
+    # installing one replaces the other. CPACK_WIX_PRODUCT_GUID is intentionally
+    # left unset so CPack regenerates it per version, which together with the
+    # stable upgrade code gives clean major-upgrade behavior.
+    set(CPACK_WIX_UPGRADE_GUID "${PRODUCT_WIX_UPGRADE_GUID}")
 
     # Add/Remove Programs links.
     set(CPACK_WIX_PROPERTY_ARPHELPLINK "${CPACK_PACKAGE_HOMEPAGE_URL}")
@@ -125,12 +124,21 @@ if(WIN32)
     # offers a per-user vs all-users choice.
     set(CPACK_WIX_TEMPLATE "${CMAKE_CURRENT_LIST_DIR}/wix_template.wxs")
     set(CPACK_WIX_UI_REF "WixUI_Advanced")
+    # Per-user subfolder name and default folder name under Program Files, used by
+    # the WixUI_Advanced dialogs (see wix_template.wxs).
+    set(CPACK_WIX_PROPERTY_ApplicationFolderName "${CPACK_PACKAGE_INSTALL_DIRECTORY}")
 
     # Re-implement "add bin to PATH": CPack's WiX generator has no built-in
     # equivalent of CPACK_NSIS_MODIFY_PATH, so an <Environment> element is
     # injected via this patch fragment. It is attached to the "app" component,
-    # which exists in both delivery modes.
-    set(CPACK_WIX_PATCH_FILE "${CMAKE_CURRENT_LIST_DIR}/wix_patch.xml")
+    # which exists in both delivery modes. Its component GUIDs are derived from
+    # the upgrade code, so they are stable and unique per product.
+    string(UUID WIX_PATH_SYSTEM_COMPONENT_GUID NAMESPACE "${PRODUCT_WIX_UPGRADE_GUID}"
+           NAME "PathSystemComponent" TYPE SHA1 UPPER)
+    string(UUID WIX_PATH_USER_COMPONENT_GUID NAMESPACE "${PRODUCT_WIX_UPGRADE_GUID}"
+           NAME "PathUserComponent" TYPE SHA1 UPPER)
+    configure_file("${CMAKE_CURRENT_LIST_DIR}/wix_patch.xml.in" "${CMAKE_BINARY_DIR}/wix_patch.xml" @ONLY)
+    set(CPACK_WIX_PATCH_FILE "${CMAKE_BINARY_DIR}/wix_patch.xml")
 endif()
 
 # Packaging-time settings that depend on the package directory (see the file).
