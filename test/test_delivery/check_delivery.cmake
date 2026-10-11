@@ -58,11 +58,32 @@ foreach (file IN LISTS CHECK_FILES)
     endif ()
 endforeach ()
 
+set(extra_args "")
 if (WIN32)
     file(TO_CMAKE_PATH "$ENV{SystemRoot}" system_root)
     set(system_dirs "${system_root}/System32")
     set(system_regex "^${system_root}/")
+    # API sets are virtual DLL names that the loader maps to system DLLs.
     set(pre_exclude "^api-ms-" "^ext-ms-")
+    # Exclude system DLLs once resolved, so they are not analyzed: their imports reach deep into
+    # Windows internals and include components that are not installed on every
+    # machine (e.g. AzureAttestManager.dll, wtdccm.dll on CI runners), which would
+    # show up as unresolved. Only the files shipped in the package are analyzed
+    # recursively. The pattern is case-insensitive, like Windows paths.
+    set(system_regex_ci "")
+    string(LENGTH "${system_regex}" length)
+    math(EXPR last "${length} - 1")
+    foreach (i RANGE ${last})
+        string(SUBSTRING "${system_regex}" ${i} 1 c)
+        string(TOUPPER "${c}" upper)
+        string(TOLOWER "${c}" lower)
+        if (upper STREQUAL lower)
+            string(APPEND system_regex_ci "${c}")
+        else ()
+            string(APPEND system_regex_ci "[${upper}${lower}]")
+        endif ()
+    endforeach ()
+    list(APPEND extra_args POST_EXCLUDE_REGEXES "${system_regex_ci}")
 else ()
     set(system_dirs "")
     set(system_regex "^/(usr/)?lib(64|32|x32)?/")
@@ -75,7 +96,8 @@ file(GET_RUNTIME_DEPENDENCIES
         RESOLVED_DEPENDENCIES_VAR resolved
         UNRESOLVED_DEPENDENCIES_VAR unresolved
         DIRECTORIES "${PREFIX}/bin" "${PREFIX}/lib" ${system_dirs}
-        PRE_EXCLUDE_REGEXES ${pre_exclude})
+        PRE_EXCLUDE_REGEXES ${pre_exclude}
+        ${extra_args})
 
 file(REAL_PATH "${PREFIX}" prefix_real)
 if (WIN32)
