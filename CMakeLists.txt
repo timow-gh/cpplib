@@ -21,7 +21,7 @@ if (NOT CPM_SOURCE_CACHE)
 endif ()
 
 project(cpplib
-        VERSION 0.0.0
+        VERSION 0.1.0
         DESCRIPTION "A C++ library and application template"
         HOMEPAGE_URL "https://github.com/timow-gh/cpplib"
         LANGUAGES CXX)
