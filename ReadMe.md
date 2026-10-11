@@ -226,6 +226,20 @@ How each generator uses them:
 - **The MSI** shows one feature per component. It uses the WixUI_Advanced dialogs
   (per-user or per-machine install) and adds `bin` to `PATH`.
 
+**Install locations.**
+- **DEB** packages install below `/usr`: the app goes to `/usr/bin`, the library to
+  `/usr/lib`, the SDK to `/usr/include` and `/usr/lib/cmake`. This is the standard
+  location for Debian packages and what most vendor packages use. The app is on
+  `PATH` right after installing, and `find_package(cpplib)` works without hints.
+  - A large self-contained product may prefer its own folder below `/opt`:
+    `cpack --preset package-gcc-release-shared -G DEB -D CPACK_PACKAGING_INSTALL_PREFIX=/opt/cpplib`
+    (build only the DEB this way: a `-D` on the command line applies to the archives too).
+  - The cost of `/opt`: the app is no longer on `PATH` unless you add a link in
+    `/usr/bin`, and SDK users need `CMAKE_PREFIX_PATH=/opt/cpplib`.
+- **TGZ and ZIP** archives run from any folder they are extracted to (Linux RPATH
+  `$ORIGIN/../lib`; on Windows the DLLs sit next to the exe).
+- **The MSI** lets the user pick the install folder.
+
 The shared and standalone MSIs share one upgrade GUID, so installing one replaces
 the other. The two app DEBs conflict with each other for the same reason: both
 install `cpplib_app`.

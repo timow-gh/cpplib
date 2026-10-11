@@ -68,7 +68,8 @@ endif()
 # Archive generators (TGZ, ZIP): one archive containing all components.
 set(CPACK_ARCHIVE_COMPONENT_INSTALL OFF)
 
-# DEB (Debian/Ubuntu): one package per component.
+# DEB (Debian/Ubuntu): one package per component, installed below /usr. The
+# install prefix and the dpkg-shlibdeps setup live in cpack_project_config.cmake.
 set(CPACK_DEB_COMPONENT_INSTALL ON)
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)  # Standard naming: name_version_arch.deb
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_CONTACT}")
