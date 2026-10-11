@@ -71,7 +71,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-24.04, windows-latest]
-        library-type: [shared, static]
+        # shared: app + cpplib DLL/.so + SDK; standalone: the self-contained app only
+        delivery-mode: [shared, standalone]
         include:
           - os: ubuntu-24.04
             workflow-prefix: workflow-package-gcc
@@ -101,23 +102,95 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: choco install wixtoolset -y
 
-      - name: Create ${{ matrix.library-type }} package
+      - name: Create ${{ matrix.delivery-mode }} package
         run: |
-          cmake --workflow --preset ${{ matrix.workflow-prefix }}-${{ matrix.library-type }}
+          cmake --workflow --preset ${{ matrix.workflow-prefix }}-${{ matrix.delivery-mode }}
         shell: bash
 
-      - name: Upload ${{ matrix.os }} ${{ matrix.library-type }} artifacts
+      - name: Upload ${{ matrix.os }} ${{ matrix.delivery-mode }} artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-${{ matrix.library-type }}-build
-          path: ${{ github.workspace }}/${{ matrix.artifact-path }}-${{ matrix.library-type }}/*.*
+          name: ${{ matrix.os }}-${{ matrix.delivery-mode }}-build
+          path: ${{ github.workspace }}/${{ matrix.artifact-path }}-${{ matrix.delivery-mode }}/*.*
           retention-days: 1
+
+  # Install and run the produced packages the way a user would, on a machine that
+  # never saw the build. A broken package never gets published.
+  verify-packages:
+    needs: build-packages
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+        delivery-mode: [shared, standalone]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.os }}-${{ matrix.delivery-mode }}-build
+          path: packages
+
+      - name: Install the DEB packages in a clean Ubuntu container and run the app
+        if: runner.os == 'Linux'
+        run: |
+          # Only the application packages: the dev package is checked below.
+          debs=$(ls packages/*.deb | grep -v -- '-dev_' | sed 's|^packages/|/packages/|' | tr '\n' ' ')
+          docker run --rm -v "$PWD/packages:/packages:ro" ubuntu:24.04 bash -euxc "
+            apt-get update
+            apt-get install -y --no-install-recommends $debs
+            cpplib_app"
+        shell: bash
+
+      - name: Run the app from the TGZ archive
+        if: runner.os == 'Linux'
+        run: |
+          mkdir archive
+          tar xzf packages/*.tar.gz -C archive --strip-components=1
+          ./archive/bin/cpplib_app
+        shell: bash
+
+      - name: Build against the installed SDK DEB (shared only)
+        if: runner.os == 'Linux' && matrix.delivery-mode == 'shared'
+        run: |
+          sudo apt-get install -y ./packages/libcpplib0_*.deb ./packages/libcpplib-dev_*.deb
+          # No vcpkg and no CMAKE_PREFIX_PATH: find_package(cpplib) uses /usr.
+          cmake -S test/test_install/cpplib_install_test_template -B consumer-build -DCMAKE_BUILD_TYPE=Release
+          cmake --build consumer-build
+          ./consumer-build/use_installdir
+        shell: bash
+
+      - name: Install the MSI silently and run the app
+        if: runner.os == 'Windows'
+        run: |
+          $msi = (Get-ChildItem packages\*.msi).FullName
+          $dir = Join-Path $env:RUNNER_TEMP 'cpplib-msi'
+          $p = Start-Process msiexec.exe -Wait -PassThru -ArgumentList @('/i', "`"$msi`"", '/qn', 'ALLUSERS=1', "APPLICATIONFOLDER=`"$dir`"", '/l*v', 'msi.log')
+          if ($p.ExitCode -ne 0) { Get-Content msi.log -Tail 50; exit $p.ExitCode }
+          & "$dir\bin\cpplib_app.exe"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        shell: pwsh
+
+      - name: Run the app from the ZIP archive
+        if: runner.os == 'Windows'
+        run: |
+          Expand-Archive (Get-ChildItem packages\*.zip).FullName -DestinationPath archive
+          $bin = (Get-ChildItem archive -Directory)[0].FullName + '\bin'
+          Get-ChildItem $bin
+          if ('${{ matrix.delivery-mode }}' -eq 'shared' -and -not (Test-Path "$bin\vcruntime140.dll")) {
+            Write-Error 'The shared package must ship the app-local MSVC runtime'; exit 1
+          }
+          & "$bin\cpplib_app.exe"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        shell: pwsh
 
   create-release:
     if: github.event_name == 'push'
     needs:
       - validate_version
       - build-packages
+      - verify-packages
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -149,8 +222,8 @@ jobs:
           body: ${{ steps.git_cliff.outputs.content }}
           files: |
             ubuntu-24.04-shared-build/*
-            ubuntu-24.04-static-build/*
+            ubuntu-24.04-standalone-build/*
             windows-latest-shared-build/*
-            windows-latest-static-build/*
+            windows-latest-standalone-build/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -8,10 +8,6 @@ inputs:
     description: 'Additional tools to install (space-separated list: lcov, clang-tidy, cppcheck)'
     required: false
     default: ''
-  build_shared_libs:
-    description: 'Whether to build shared libraries (ON/OFF)'
-    required: false
-    default: 'ON'
   build_native_args:
     description: 'Additional native build-tool arguments passed after cmake --build --'
     required: false
@@ -54,6 +50,7 @@ runs:
         WORKFLOW_NAME="${{ inputs.cmake_workflow }}"
         # Extract compiler and build type from workflow name
         # workflow-test-gcc-release -> conf-gcc-release
+        # workflow-test-gcc-release-standalone -> conf-gcc-release-standalone
         BASE_NAME="${WORKFLOW_NAME#workflow-test-}"
         echo "configure=conf-${BASE_NAME}" >> $GITHUB_OUTPUT
         echo "build=build-${BASE_NAME}" >> $GITHUB_OUTPUT
@@ -65,7 +62,7 @@ runs:
         # vcpkg may download source archives while configuring. GitHub occasionally returns
         # transient 5xx/connection errors, so retry the complete configure step with backoff.
         for attempt in 1 2 3 4 5; do
-          if cmake --preset ${{ steps.preset.outputs.configure }} -DBUILD_SHARED_LIBS=${{ inputs.build_shared_libs }}; then
+          if cmake --preset ${{ steps.preset.outputs.configure }}; then
             break
           fi
           if [ "$attempt" = 5 ]; then

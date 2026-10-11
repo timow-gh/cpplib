@@ -20,7 +20,7 @@ feat, fix, perf, docs, refactor, test, build, ci, chore, revert
 Recommended scopes for this repository:
 
 ```text
-api, core, geoqik, opengl, cmake, package, ci, docs, examples, tests
+api, core, app, cmake, package, ci, docs, tests
 ```
 
 Examples:
@@ -81,9 +81,11 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The release workflow builds packages, verifies that the tag version matches
-`project(geoqik VERSION ...)` in `CMakeLists.txt`, generates the GitHub Release
-body with `git-cliff`, and uploads the package artifacts.
+The release workflow verifies that the tag version matches
+`project(cpplib VERSION ...)` in `CMakeLists.txt` and the `version` in
+`vcpkg.json`, builds the shared and standalone packages, installs and runs them
+(`verify-packages`), generates the GitHub Release body with `git-cliff`, and
+uploads the package artifacts.
 
 Create `v0.1.0` as the baseline tag for the current history. After that,
 release notes are generated from Conventional Commits since the previous `v*`

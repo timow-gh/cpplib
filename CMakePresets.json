@@ -38,21 +38,45 @@
       }
     },
     {
-      "name": "conf-shared-libs",
-      "description": "Build shared/dynamic libraries",
+      "name": "conf-shared",
+      "description": "Delivery mode 'shared': cpplib is a shared library, the app ships as executable + cpplib DLL/.so",
       "hidden": true,
-      "inherits": "conf-common",
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "ON"
       }
     },
     {
-      "name": "conf-static-libs",
-      "description": "Build static libraries",
+      "name": "conf-standalone",
+      "description": "Delivery mode 'standalone': cpplib is linked statically, the app ships as a single executable",
       "hidden": true,
-      "inherits": "conf-common",
       "cacheVariables": {
         "BUILD_SHARED_LIBS": "OFF"
+      }
+    },
+    {
+      "name": "conf-msvc-shared",
+      "description": "MSVC shared mode: static third-party libraries, dynamic CRT (/MD)",
+      "hidden": true,
+      "inherits": "conf-shared",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
+      }
+    },
+    {
+      "name": "conf-msvc-standalone",
+      "description": "MSVC standalone mode: static third-party libraries, static CRT (/MT)",
+      "hidden": true,
+      "inherits": "conf-standalone",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+      }
+    },
+    {
+      "name": "conf-no-install-test",
+      "description": "Do not register the test that consumes the installed cpplib package",
+      "hidden": true,
+      "cacheVariables": {
+        "cpplib_TEST_INSTALL": "OFF"
       }
     },
     {
@@ -92,8 +116,7 @@
         "strategy": "external"
       },
       "cacheVariables": {
-        "CPACK_GENERATOR": "WIX",
-        "VCPKG_TARGET_TRIPLET": "x64-windows-static"
+        "CPACK_GENERATOR": "WIX"
       }
     },
     {
@@ -140,8 +163,9 @@
     {
       "name": "conf-msvc-debug",
       "displayName": "msvc Debug (User Mode)",
-      "description": "Target Windows with the msvc compiler, debug build type",
+      "description": "Target Windows with the msvc compiler, debug build type, shared delivery mode",
       "inherits": [
+        "conf-msvc-shared",
         "conf-msvc-common",
         "conf-debug"
       ]
@@ -149,8 +173,19 @@
     {
       "name": "conf-msvc-release",
       "displayName": "msvc Release (User Mode)",
-      "description": "Target Windows with the msvc compiler, release build type",
+      "description": "Target Windows with the msvc compiler, release build type, shared delivery mode",
       "inherits": [
+        "conf-msvc-shared",
+        "conf-msvc-common",
+        "conf-release"
+      ]
+    },
+    {
+      "name": "conf-msvc-release-standalone",
+      "displayName": "msvc Release (Standalone)",
+      "description": "Target Windows with the msvc compiler, release build type, standalone delivery mode",
+      "inherits": [
+        "conf-msvc-standalone",
         "conf-msvc-common",
         "conf-release"
       ]
@@ -158,8 +193,9 @@
     {
       "name": "conf-msvc-relwithdebinfo",
       "displayName": "msvc RelWithDebInfo (User Mode)",
-      "description": "Target Windows with the msvc compiler, release with debug info build type",
+      "description": "Target Windows with the msvc compiler, release with debug info build type, shared delivery mode",
       "inherits": [
+        "conf-msvc-shared",
         "conf-msvc-common",
         "conf-relwithdebinfo"
       ]
@@ -167,37 +203,19 @@
     {
       "name": "conf-msvc-minsizerel",
       "displayName": "msvc MinSizeRel (User Mode)",
-      "description": "Target Windows with the msvc compiler, minimum size release build type",
+      "description": "Target Windows with the msvc compiler, minimum size release build type, shared delivery mode",
       "inherits": [
+        "conf-msvc-shared",
         "conf-msvc-common",
         "conf-minsizerel"
       ]
     },
     {
-      "name": "conf-msvc-release-shared",
-      "displayName": "msvc Release (Shared)",
-      "description": "Target Windows with the msvc compiler, release build type, shared libraries",
-      "inherits": [
-        "conf-msvc-common",
-        "conf-release",
-        "conf-shared-libs"
-      ]
-    },
-    {
-      "name": "conf-msvc-release-static",
-      "displayName": "msvc Release (Static)",
-      "description": "Target Windows with the msvc compiler, release build type, static libraries",
-      "inherits": [
-        "conf-msvc-common",
-        "conf-release",
-        "conf-static-libs"
-      ]
-    },
-    {
       "name": "conf-gcc-debug",
       "displayName": "gcc Debug",
-      "description": "Target Unix-like OS with the gcc compiler, debug build type",
+      "description": "Target Unix-like OS with the gcc compiler, debug build type, shared delivery mode",
       "inherits": [
+        "conf-shared",
         "conf-gcc-common",
         "conf-debug"
       ]
@@ -205,8 +223,9 @@
     {
       "name": "conf-gcc-relwithdebinfo",
       "displayName": "gcc RelWithDebInfo",
-      "description": "Target Unix-like OS with the gcc compiler, release with debug info build type",
+      "description": "Target Unix-like OS with the gcc compiler, release with debug info build type, shared delivery mode",
       "inherits": [
+        "conf-shared",
         "conf-gcc-common",
         "conf-relwithdebinfo"
       ]
@@ -214,8 +233,9 @@
     {
       "name": "conf-gcc-minsizerel",
       "displayName": "gcc MinSizeRel",
-      "description": "Target Unix-like OS with the gcc compiler, minimum size release build type",
+      "description": "Target Unix-like OS with the gcc compiler, minimum size release build type, shared delivery mode",
       "inherits": [
+        "conf-shared",
         "conf-gcc-common",
         "conf-minsizerel"
       ]
@@ -223,37 +243,29 @@
     {
       "name": "conf-gcc-release",
       "displayName": "gcc Release",
-      "description": "Target Unix-like OS with the gcc compiler, release build type",
+      "description": "Target Unix-like OS with the gcc compiler, release build type, shared delivery mode",
       "inherits": [
+        "conf-shared",
         "conf-gcc-common",
         "conf-release"
       ]
     },
     {
-      "name": "conf-gcc-release-shared",
-      "displayName": "gcc Release (Shared)",
-      "description": "Target Unix-like OS with the gcc compiler, release build type, shared libraries",
+      "name": "conf-gcc-release-standalone",
+      "displayName": "gcc Release (Standalone)",
+      "description": "Target Unix-like OS with the gcc compiler, release build type, standalone delivery mode",
       "inherits": [
+        "conf-standalone",
         "conf-gcc-common",
-        "conf-release",
-        "conf-shared-libs"
-      ]
-    },
-    {
-      "name": "conf-gcc-release-static",
-      "displayName": "gcc Release (Static)",
-      "description": "Target Unix-like OS with the gcc compiler, release build type, static libraries",
-      "inherits": [
-        "conf-gcc-common",
-        "conf-release",
-        "conf-static-libs"
+        "conf-release"
       ]
     },
     {
       "name": "conf-clang-debug",
       "displayName": "clang Debug",
-      "description": "Target Unix-like OS with the clang compiler, debug build type",
+      "description": "Target Unix-like OS with the clang compiler, debug build type, shared delivery mode",
       "inherits": [
+        "conf-shared",
         "conf-clang-common",
         "conf-debug"
       ]
@@ -261,8 +273,9 @@
     {
       "name": "conf-clang-relwithdebinfo",
       "displayName": "clang RelWithDebInfo",
-      "description": "Target Unix-like OS with the clang compiler, release with debug info build type",
+      "description": "Target Unix-like OS with the clang compiler, release with debug info build type, shared delivery mode",
       "inherits": [
+        "conf-shared",
         "conf-clang-common",
         "conf-relwithdebinfo"
       ]
@@ -270,8 +283,9 @@
     {
       "name": "conf-clang-minsizerel",
       "displayName": "clang MinSizeRel",
-      "description": "Target Unix-like OS with the clang compiler, minimum size release build type",
+      "description": "Target Unix-like OS with the clang compiler, minimum size release build type, shared delivery mode",
       "inherits": [
+        "conf-shared",
         "conf-clang-common",
         "conf-minsizerel"
       ]
@@ -279,48 +293,28 @@
     {
       "name": "conf-clang-release",
       "displayName": "clang Release",
-      "description": "Target Unix-like OS with the clang compiler, release build type",
+      "description": "Target Unix-like OS with the clang compiler, release build type, shared delivery mode",
       "inherits": [
+        "conf-shared",
         "conf-clang-common",
         "conf-release"
       ]
     },
     {
-      "name": "conf-clang-release-shared",
-      "displayName": "clang Release (Shared)",
-      "description": "Target Unix-like OS with the clang compiler, release build type, shared libraries",
+      "name": "conf-clang-release-standalone",
+      "displayName": "clang Release (Standalone)",
+      "description": "Target Unix-like OS with the clang compiler, release build type, standalone delivery mode",
       "inherits": [
+        "conf-standalone",
         "conf-clang-common",
-        "conf-release",
-        "conf-shared-libs"
+        "conf-release"
       ]
-    },
-    {
-      "name": "conf-clang-release-static",
-      "displayName": "clang Release (Static)",
-      "description": "Target Unix-like OS with the clang compiler, release build type, static libraries",
-      "inherits": [
-        "conf-clang-common",
-        "conf-release",
-        "conf-static-libs"
-      ]
-    },
-    {
-      "name": "conf-no-install-smoke-test",
-      "description": "Do not register the installed package smoke test",
-      "hidden": true,
-      "cacheVariables": {
-        "geoqik_INSTALL_SMOKE_TEST": "OFF"
-      }
     },
     {
       "name": "conf-asan-common",
       "description": "Common AddressSanitizer settings for Unix-like OS",
       "hidden": true,
-      "inherits": [
-        "conf-unix-common",
-        "conf-no-install-smoke-test"
-      ],
+      "inherits": "conf-unix-common",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=address -fno-omit-frame-pointer -g",
         "CMAKE_C_FLAGS": "-fsanitize=address -fno-omit-frame-pointer -g",
@@ -334,10 +328,7 @@
       "name": "conf-tsan-common",
       "description": "Common ThreadSanitizer settings for Unix-like OS",
       "hidden": true,
-      "inherits": [
-        "conf-unix-common",
-        "conf-no-install-smoke-test"
-      ],
+      "inherits": "conf-unix-common",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=thread -g",
         "CMAKE_C_FLAGS": "-fsanitize=thread -g",
@@ -351,10 +342,7 @@
       "name": "conf-ubsan-common",
       "description": "Common UndefinedBehaviorSanitizer settings for Unix-like OS",
       "hidden": true,
-      "inherits": [
-        "conf-unix-common",
-        "conf-no-install-smoke-test"
-      ],
+      "inherits": "conf-unix-common",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=undefined -fno-omit-frame-pointer -g",
         "CMAKE_C_FLAGS": "-fsanitize=undefined -fno-omit-frame-pointer -g",
@@ -370,7 +358,7 @@
       "hidden": true,
       "inherits": [
         "conf-gcc-common",
-        "conf-no-install-smoke-test"
+        "conf-no-install-test"
       ],
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "--coverage -O0 -g",
@@ -563,6 +551,12 @@
       "displayName": "msvc Release Build"
     },
     {
+      "name": "build-msvc-release-standalone",
+      "inherits": "build-release",
+      "configurePreset": "conf-msvc-release-standalone",
+      "displayName": "msvc Release Build (Standalone)"
+    },
+    {
       "name": "build-msvc-relwithdebinfo",
       "inherits": "build-relwithdebinfo",
       "configurePreset": "conf-msvc-relwithdebinfo",
@@ -573,18 +567,6 @@
       "inherits": "build-minsizerel",
       "configurePreset": "conf-msvc-minsizerel",
       "displayName": "msvc MinSizeRel Build"
-    },
-    {
-      "name": "build-msvc-release-shared",
-      "inherits": "build-release",
-      "configurePreset": "conf-msvc-release-shared",
-      "displayName": "msvc Release Build (Shared)"
-    },
-    {
-      "name": "build-msvc-release-static",
-      "inherits": "build-release",
-      "configurePreset": "conf-msvc-release-static",
-      "displayName": "msvc Release Build (Static)"
     },
     {
       "name": "build-gcc-debug",
@@ -611,16 +593,10 @@
       "displayName": "gcc Release Build"
     },
     {
-      "name": "build-gcc-release-shared",
+      "name": "build-gcc-release-standalone",
       "inherits": "build-release",
-      "configurePreset": "conf-gcc-release-shared",
-      "displayName": "gcc Release Build (Shared)"
-    },
-    {
-      "name": "build-gcc-release-static",
-      "inherits": "build-release",
-      "configurePreset": "conf-gcc-release-static",
-      "displayName": "gcc Release Build (Static)"
+      "configurePreset": "conf-gcc-release-standalone",
+      "displayName": "gcc Release Build (Standalone)"
     },
     {
       "name": "build-clang-debug",
@@ -647,16 +623,10 @@
       "displayName": "clang Release Build"
     },
     {
-      "name": "build-clang-release-shared",
+      "name": "build-clang-release-standalone",
       "inherits": "build-release",
-      "configurePreset": "conf-clang-release-shared",
-      "displayName": "clang Release Build (Shared)"
-    },
-    {
-      "name": "build-clang-release-static",
-      "inherits": "build-release",
-      "configurePreset": "conf-clang-release-static",
-      "displayName": "clang Release Build (Static)"
+      "configurePreset": "conf-clang-release-standalone",
+      "displayName": "clang Release Build (Standalone)"
     },
     {
       "name": "build-gcc-debug-asan",
@@ -741,7 +711,9 @@
       "inherits": "build-debug",
       "configurePreset": "conf-gcc-coverage",
       "displayName": "Generate Coverage Report",
-      "targets": ["coverage-report"]
+      "targets": [
+        "coverage-report"
+      ]
     }
   ],
   "testPresets": [
@@ -836,6 +808,16 @@
       "configurePreset": "conf-msvc-release"
     },
     {
+      "name": "test-msvc-release-standalone",
+      "displayName": "msvc Release Tests (Standalone)",
+      "description": "Enable output and stop on failure",
+      "inherits": [
+        "test-msvc-common",
+        "test-release"
+      ],
+      "configurePreset": "conf-msvc-release-standalone"
+    },
+    {
       "name": "test-msvc-relwithdebinfo",
       "displayName": "msvc RelWithDebInfo Tests",
       "description": "Enable output and stop on failure",
@@ -854,26 +836,6 @@
         "test-minsizerel"
       ],
       "configurePreset": "conf-msvc-minsizerel"
-    },
-    {
-      "name": "test-msvc-release-shared",
-      "displayName": "msvc Release Tests (Shared)",
-      "description": "Enable output and stop on failure",
-      "inherits": [
-        "test-msvc-common",
-        "test-release"
-      ],
-      "configurePreset": "conf-msvc-release-shared"
-    },
-    {
-      "name": "test-msvc-release-static",
-      "displayName": "msvc Release Tests (Static)",
-      "description": "Enable output and stop on failure",
-      "inherits": [
-        "test-msvc-common",
-        "test-release"
-      ],
-      "configurePreset": "conf-msvc-release-static"
     },
     {
       "name": "test-gcc-debug",
@@ -916,24 +878,14 @@
       "configurePreset": "conf-gcc-release"
     },
     {
-      "name": "test-gcc-release-shared",
-      "displayName": "gcc Release Tests (Shared)",
+      "name": "test-gcc-release-standalone",
+      "displayName": "gcc Release Tests (Standalone)",
       "description": "Enable output and stop on failure",
       "inherits": [
         "test-unix-common",
         "test-release"
       ],
-      "configurePreset": "conf-gcc-release-shared"
-    },
-    {
-      "name": "test-gcc-release-static",
-      "displayName": "gcc Release Tests (Static)",
-      "description": "Enable output and stop on failure",
-      "inherits": [
-        "test-unix-common",
-        "test-release"
-      ],
-      "configurePreset": "conf-gcc-release-static"
+      "configurePreset": "conf-gcc-release-standalone"
     },
     {
       "name": "test-clang-debug",
@@ -976,24 +928,14 @@
       "configurePreset": "conf-clang-release"
     },
     {
-      "name": "test-clang-release-shared",
-      "displayName": "clang Release Tests (Shared)",
+      "name": "test-clang-release-standalone",
+      "displayName": "clang Release Tests (Standalone)",
       "description": "Enable output and stop on failure",
       "inherits": [
         "test-unix-common",
         "test-release"
       ],
-      "configurePreset": "conf-clang-release-shared"
-    },
-    {
-      "name": "test-clang-release-static",
-      "displayName": "clang Release Tests (Static)",
-      "description": "Enable output and stop on failure",
-      "inherits": [
-        "test-unix-common",
-        "test-release"
-      ],
-      "configurePreset": "conf-clang-release-static"
+      "configurePreset": "conf-clang-release-standalone"
     },
     {
       "name": "test-gcc-debug-asan",
@@ -1152,7 +1094,7 @@
       "inherits": "package-common",
       "generators": [
         "ZIP",
-        "NSIS"
+        "WIX"
       ]
     },
     {
@@ -1166,31 +1108,9 @@
       ]
     },
     {
-      "name": "package-msvc-release",
-      "displayName": "Windows Release Package",
-      "description": "Create ZIP packages on Windows",
-      "inherits": [
-        "package-msvc-common",
-        "package-release"
-      ],
-      "configurePreset": "conf-msvc-release"
-    },
-    {
-      "name": "package-msvc-release-nsis",
-      "displayName": "Windows NSIS Installer Package",
-      "description": "Create NSIS installer on Windows",
-      "inherits": [
-        "package-release"
-      ],
-      "configurePreset": "conf-msvc-release",
-      "generators": [
-        "NSIS"
-      ]
-    },
-    {
-      "name": "package-gcc-release",
-      "displayName": "Unix GCC Release Package",
-      "description": "Create TGZ and DEB packages on Unix-like systems with GCC",
+      "name": "package-gcc-release-shared",
+      "displayName": "Unix GCC Release Package (Shared)",
+      "description": "Create TGZ and DEB packages: application + cpplib shared library + SDK",
       "inherits": [
         "package-unix-common",
         "package-release"
@@ -1198,9 +1118,19 @@
       "configurePreset": "conf-gcc-release"
     },
     {
-      "name": "package-clang-release",
-      "displayName": "Unix Clang Release Package",
-      "description": "Create TGZ and DEB packages on Unix-like systems with Clang",
+      "name": "package-gcc-release-standalone",
+      "displayName": "Unix GCC Release Package (Standalone)",
+      "description": "Create TGZ and DEB packages: the standalone application executable",
+      "inherits": [
+        "package-unix-common",
+        "package-release"
+      ],
+      "configurePreset": "conf-gcc-release-standalone"
+    },
+    {
+      "name": "package-clang-release-shared",
+      "displayName": "Unix Clang Release Package (Shared)",
+      "description": "Create TGZ and DEB packages: application + cpplib shared library + SDK",
       "inherits": [
         "package-unix-common",
         "package-release"
@@ -1208,44 +1138,34 @@
       "configurePreset": "conf-clang-release"
     },
     {
-      "name": "package-gcc-release-shared",
-      "displayName": "Unix GCC Release Package (Shared)",
-      "description": "Create TGZ and DEB packages for shared libraries with GCC",
+      "name": "package-clang-release-standalone",
+      "displayName": "Unix Clang Release Package (Standalone)",
+      "description": "Create TGZ and DEB packages: the standalone application executable",
       "inherits": [
         "package-unix-common",
         "package-release"
       ],
-      "configurePreset": "conf-gcc-release-shared"
-    },
-    {
-      "name": "package-gcc-release-static",
-      "displayName": "Unix GCC Release Package (Static)",
-      "description": "Create TGZ and DEB packages for static libraries with GCC",
-      "inherits": [
-        "package-unix-common",
-        "package-release"
-      ],
-      "configurePreset": "conf-gcc-release-static"
+      "configurePreset": "conf-clang-release-standalone"
     },
     {
       "name": "package-msvc-release-shared",
-      "displayName": "Windows Release Package (Shared)",
-      "description": "Create ZIP and NSIS packages for shared libraries on Windows",
+      "displayName": "Windows MSVC Release Package (Shared)",
+      "description": "Create ZIP and WIX (MSI) packages: application + cpplib shared library + SDK",
       "inherits": [
         "package-msvc-common",
         "package-release"
       ],
-      "configurePreset": "conf-msvc-release-shared"
+      "configurePreset": "conf-msvc-release"
     },
     {
-      "name": "package-msvc-release-static",
-      "displayName": "Windows Release Package (Static)",
-      "description": "Create ZIP and NSIS packages for static libraries on Windows",
+      "name": "package-msvc-release-standalone",
+      "displayName": "Windows MSVC Release Package (Standalone)",
+      "description": "Create ZIP and WIX (MSI) packages: the standalone application executable",
       "inherits": [
         "package-msvc-common",
         "package-release"
       ],
-      "configurePreset": "conf-msvc-release-static"
+      "configurePreset": "conf-msvc-release-standalone"
     }
   ],
   "workflowPresets": [
@@ -1284,6 +1204,25 @@
         {
           "type": "test",
           "name": "test-clang-release"
+        }
+      ]
+    },
+    {
+      "name": "workflow-test-clang-release-standalone",
+      "displayName": "Clang Release Workflow (Standalone)",
+      "description": "Configure, build and test the standalone delivery mode in one step",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-clang-release-standalone"
+        },
+        {
+          "type": "build",
+          "name": "build-clang-release-standalone"
+        },
+        {
+          "type": "test",
+          "name": "test-clang-release-standalone"
         }
       ]
     },
@@ -1364,6 +1303,25 @@
       ]
     },
     {
+      "name": "workflow-test-gcc-release-standalone",
+      "displayName": "GCC Release Workflow (Standalone)",
+      "description": "Configure, build and test the standalone delivery mode in one step",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-gcc-release-standalone"
+        },
+        {
+          "type": "build",
+          "name": "build-gcc-release-standalone"
+        },
+        {
+          "type": "test",
+          "name": "test-gcc-release-standalone"
+        }
+      ]
+    },
+    {
       "name": "workflow-test-gcc-relwithdebinfo",
       "displayName": "GCC RelWithDebInfo Workflow",
       "description": "Configure, build and test with GCC in one step",
@@ -1440,6 +1398,25 @@
       ]
     },
     {
+      "name": "workflow-test-msvc-release-standalone",
+      "displayName": "Windows Release Workflow (Standalone)",
+      "description": "Configure, build and test the standalone delivery mode in one step",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-msvc-release-standalone"
+        },
+        {
+          "type": "build",
+          "name": "build-msvc-release-standalone"
+        },
+        {
+          "type": "test",
+          "name": "test-msvc-release-standalone"
+        }
+      ]
+    },
+    {
       "name": "workflow-test-msvc-relwithdebinfo",
       "displayName": "Windows RelWithDebInfo Workflow",
       "description": "Configure, build and test on Windows in one step",
@@ -1478,9 +1455,9 @@
       ]
     },
     {
-      "name": "workflow-package-clang",
-      "displayName": "Clang Package Workflow",
-      "description": "Configure, build, test, and package with Clang in release mode",
+      "name": "workflow-package-clang-shared",
+      "displayName": "Clang Package Workflow (Shared)",
+      "description": "Configure, build, test, and package the shared delivery mode with Clang",
       "steps": [
         {
           "type": "configure",
@@ -1496,14 +1473,37 @@
         },
         {
           "type": "package",
-          "name": "package-clang-release"
+          "name": "package-clang-release-shared"
         }
       ]
     },
     {
-      "name": "workflow-package-gcc",
-      "displayName": "GCC Package Workflow",
-      "description": "Configure, build, test, and package with GCC in release mode",
+      "name": "workflow-package-clang-standalone",
+      "displayName": "Clang Package Workflow (Standalone)",
+      "description": "Configure, build, test, and package the standalone delivery mode with Clang",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "conf-clang-release-standalone"
+        },
+        {
+          "type": "build",
+          "name": "build-clang-release-standalone"
+        },
+        {
+          "type": "test",
+          "name": "test-clang-release-standalone"
+        },
+        {
+          "type": "package",
+          "name": "package-clang-release-standalone"
+        }
+      ]
+    },
+    {
+      "name": "workflow-package-gcc-shared",
+      "displayName": "GCC Package Workflow (Shared)",
+      "description": "Configure, build, test, and package the shared delivery mode with GCC",
       "steps": [
         {
           "type": "configure",
@@ -1519,60 +1519,37 @@
         },
         {
           "type": "package",
-          "name": "package-gcc-release"
-        }
-      ]
-    },
-    {
-      "name": "workflow-package-gcc-shared",
-      "displayName": "GCC Package Workflow (Shared)",
-      "description": "Configure, build, test, and package shared libraries with GCC",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "conf-gcc-release-shared"
-        },
-        {
-          "type": "build",
-          "name": "build-gcc-release-shared"
-        },
-        {
-          "type": "test",
-          "name": "test-gcc-release-shared"
-        },
-        {
-          "type": "package",
           "name": "package-gcc-release-shared"
         }
       ]
     },
     {
-      "name": "workflow-package-gcc-static",
-      "displayName": "GCC Package Workflow (Static)",
-      "description": "Configure, build, test, and package static libraries with GCC",
+      "name": "workflow-package-gcc-standalone",
+      "displayName": "GCC Package Workflow (Standalone)",
+      "description": "Configure, build, test, and package the standalone delivery mode with GCC",
       "steps": [
         {
           "type": "configure",
-          "name": "conf-gcc-release-static"
+          "name": "conf-gcc-release-standalone"
         },
         {
           "type": "build",
-          "name": "build-gcc-release-static"
+          "name": "build-gcc-release-standalone"
         },
         {
           "type": "test",
-          "name": "test-gcc-release-static"
+          "name": "test-gcc-release-standalone"
         },
         {
           "type": "package",
-          "name": "package-gcc-release-static"
+          "name": "package-gcc-release-standalone"
         }
       ]
     },
     {
-      "name": "workflow-package-msvc",
-      "displayName": "Windows Package Workflow",
-      "description": "Configure, build, test, and package on Windows in release mode",
+      "name": "workflow-package-msvc-shared",
+      "displayName": "MSVC Package Workflow (Shared)",
+      "description": "Configure, build, test, and package the shared delivery mode with MSVC",
       "steps": [
         {
           "type": "configure",
@@ -1588,53 +1565,30 @@
         },
         {
           "type": "package",
-          "name": "package-msvc-release"
-        }
-      ]
-    },
-    {
-      "name": "workflow-package-msvc-shared",
-      "displayName": "Windows Package Workflow (Shared)",
-      "description": "Configure, build, test, and package shared libraries on Windows",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "conf-msvc-release-shared"
-        },
-        {
-          "type": "build",
-          "name": "build-msvc-release-shared"
-        },
-        {
-          "type": "test",
-          "name": "test-msvc-release-shared"
-        },
-        {
-          "type": "package",
           "name": "package-msvc-release-shared"
         }
       ]
     },
     {
-      "name": "workflow-package-msvc-static",
-      "displayName": "Windows Package Workflow (Static)",
-      "description": "Configure, build, test, and package static libraries on Windows",
+      "name": "workflow-package-msvc-standalone",
+      "displayName": "MSVC Package Workflow (Standalone)",
+      "description": "Configure, build, test, and package the standalone delivery mode with MSVC",
       "steps": [
         {
           "type": "configure",
-          "name": "conf-msvc-release-static"
+          "name": "conf-msvc-release-standalone"
         },
         {
           "type": "build",
-          "name": "build-msvc-release-static"
+          "name": "build-msvc-release-standalone"
         },
         {
           "type": "test",
-          "name": "test-msvc-release-static"
+          "name": "test-msvc-release-standalone"
         },
         {
           "type": "package",
-          "name": "package-msvc-release-static"
+          "name": "package-msvc-release-standalone"
         }
       ]
     },
