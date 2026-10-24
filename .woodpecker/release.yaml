@@ -1,0 +1,56 @@
+# Counterpart of .github/workflows/release.yml for Windows: on a v* tag, validate the version and
+# product identity, build and verify the shared and standalone packages, and publish them as a
+# Forgejo release. A manual run builds and verifies without publishing, like workflow_dispatch.
+#
+# Not ported: build-provenance attestations (Forgejo has no equivalent) and the Linux packages
+# (follow-up for a WSL agent; it will upload into the same release).
+
+labels:
+  os: windows
+  env: native
+
+when:
+  - event: tag
+    ref: refs/tags/v*
+  - event: manual
+
+steps:
+  - name: validate
+    image: powershell
+    environment:
+      FORGEJO_TOKEN:
+        from_secret: forgejo_token
+      ALLOW_PRODUCT_IDENTITY_CHANGE:
+        from_secret: allow_product_identity_change
+    commands:
+      - .\.woodpecker\scripts\release-validate.ps1
+
+  - name: package-shared
+    image: powershell
+    commands:
+      - .\.woodpecker\scripts\release-package.ps1 -DeliveryMode shared
+
+  - name: package-standalone
+    image: powershell
+    commands:
+      - .\.woodpecker\scripts\release-package.ps1 -DeliveryMode standalone
+
+  - name: verify-shared
+    image: powershell
+    commands:
+      - .\.woodpecker\scripts\release-verify.ps1 -DeliveryMode shared
+
+  - name: verify-standalone
+    image: powershell
+    commands:
+      - .\.woodpecker\scripts\release-verify.ps1 -DeliveryMode standalone
+
+  - name: publish
+    image: powershell
+    environment:
+      FORGEJO_TOKEN:
+        from_secret: forgejo_token
+    commands:
+      - .\.woodpecker\scripts\release-publish.ps1
+    when:
+      - event: tag

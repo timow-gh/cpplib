@@ -70,6 +70,9 @@ tools/git-hooks/install-hooks.ps1
 cliff.toml
 ```
 
+For Woodpecker CI, also copy `.woodpecker/commit-messages.yaml`,
+`.woodpecker/scripts/check-commit-messages.ps1` and `.woodpecker/scripts/ci-common.ps1`.
+
 Then adjust the allowed scopes and release workflow names for that repository.
 
 ## Releases

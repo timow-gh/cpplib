@@ -1,0 +1,29 @@
+# Packaging check for pull requests, which GitHub does not have: builds the shared and standalone
+# packages the way release.yaml does and runs the app from the ZIP, so a packaging mistake shows
+# up in the pull request instead of at the next release. The MSI is built but not installed,
+# because installing needs an elevated agent.
+
+labels:
+  os: windows
+  env: native
+
+matrix:
+  DELIVERY_MODE:
+    - shared
+    - standalone
+
+when:
+  # For pull requests, `branch` is the target branch.
+  - event: pull_request
+    branch: main
+
+steps:
+  - name: package-${DELIVERY_MODE}
+    image: powershell
+    commands:
+      - .\.woodpecker\scripts\release-package.ps1 -DeliveryMode ${DELIVERY_MODE}
+
+  - name: verify-zip-${DELIVERY_MODE}
+    image: powershell
+    commands:
+      - .\.woodpecker\scripts\release-verify.ps1 -DeliveryMode ${DELIVERY_MODE} -ZipOnly

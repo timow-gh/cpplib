@@ -1,0 +1,16 @@
+# Counterpart of .github/workflows/commit-messages.yml: enforces Conventional Commits for the
+# pull request title and every commit of the pull request. pull_request_metadata covers title
+# edits, like `edited` on GitHub.
+
+labels:
+  os: windows
+  env: native
+
+when:
+  - event: [pull_request, pull_request_metadata]
+
+steps:
+  - name: validate
+    image: powershell
+    commands:
+      - .\.woodpecker\scripts\check-commit-messages.ps1
