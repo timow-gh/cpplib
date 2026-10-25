@@ -26,6 +26,13 @@ fail_on_unmatched_commit = true
 tag_pattern = "v[0-9]*"
 sort_commits = "oldest"
 
+# Pull requests come from GitHub and Forgejo, which both count from #1, so a "(#N)" that a squash
+# merge appended to the subject is ambiguous. The GitHub release gets the number from the API
+# (commit.remote.pr_number) instead.
+commit_preprocessors = [
+    { pattern = '(?m) \(#[0-9]+\)$', replace = "" },
+]
+
 commit_parsers = [
     { message = '^Merge ', skip = true },
     { message = '^[a-z]+(\([^)]+\))?!', group = "Breaking Changes" },

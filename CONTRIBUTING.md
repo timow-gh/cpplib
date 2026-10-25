@@ -35,6 +35,18 @@ feat(api)!: rename public camera enum
 Use `!` after the type or scope for breaking changes. You can also add a
 `BREAKING CHANGE:` footer in the commit body.
 
+## Merging Pull Requests
+
+Pull requests are opened on GitHub and on Forgejo, and both number them from
+`#1`. A pull request number in a commit subject is therefore ambiguous, so
+squash merges use the pull request title alone:
+
+- Forgejo prefills the message from
+  `.forgejo/default_merge_message/SQUASH_TEMPLATE.md`: the title, the
+  description and a `Reviewed-on:` link to the pull request.
+- GitHub always appends ` (#N)` to the squash title; delete it in the merge
+  dialog. `cliff.toml` strips it from the release notes in any case.
+
 ## Local Commit Hook
 
 Git validates final commit messages with the `commit-msg` hook. This is the
@@ -72,6 +84,7 @@ cliff.toml
 
 For Woodpecker CI, also copy `.woodpecker/commit-messages.yaml`,
 `.woodpecker/scripts/check-commit-messages.ps1` and `.woodpecker/scripts/ci-common.ps1`.
+For Forgejo, also copy `.forgejo/default_merge_message/SQUASH_TEMPLATE.md`.
 
 Then adjust the allowed scopes and release workflow names for that repository.
 
