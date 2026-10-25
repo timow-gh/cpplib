@@ -1,0 +1,25 @@
+# Publishes the release of a v* tag once release.yaml (Windows) and release-linux.yaml have both
+# built, verified and uploaded their packages into the draft release: the guarantee of
+# .github/workflows/release.yml that a broken package never gets published. Woodpecker skips this
+# workflow if one of the two fails, so the release stays a draft.
+
+labels:
+  os: windows
+  env: native
+
+depends_on:
+  - release
+  - release-linux
+
+when:
+  - event: tag
+    ref: refs/tags/v*
+
+steps:
+  - name: finalize
+    image: powershell
+    environment:
+      FORGEJO_TOKEN:
+        from_secret: forgejo_token
+    commands:
+      - .\.woodpecker\scripts\release-finalize.ps1

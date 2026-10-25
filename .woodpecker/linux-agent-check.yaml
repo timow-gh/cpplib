@@ -1,0 +1,23 @@
+# Smoke test of the Linux (WSL) agent: shows that a pipeline reaches it and that every tool the
+# other Linux workflows need is installed. Limit it to `event: manual` once the agent is set up.
+#
+# All logic lives in .woodpecker/scripts: Woodpecker substitutes variables in this file (the raw
+# text, comments included) before the shell sees it. So no dollar sign appears in the workflow
+# files except for intended matrix variables. The scripts are called through bash, so they need
+# no executable bit.
+
+labels:
+  os: linux
+  env: wsl
+
+when:
+  - event: [push, manual]
+
+steps:
+  - name: agent-check
+    image: bash
+    commands:
+      - echo "Hello from Linux"
+      - hostname
+      - git --version
+      - bash .woodpecker/scripts/linux-agent-check.sh

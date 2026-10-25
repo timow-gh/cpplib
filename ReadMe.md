@@ -410,7 +410,7 @@ Then:
 | `commit-messages.yml` | Enforces Conventional Commits |
 
 The same CI also runs on a self-hosted Forgejo + Woodpecker setup from `.woodpecker/`,
-currently on a native Windows agent. See [.woodpecker/README.md](.woodpecker/README.md) for
+on a native Windows agent and a Linux agent in WSL. See [.woodpecker/README.md](.woodpecker/README.md) for
 the differences to the GitHub workflows, the agent setup and troubleshooting.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions, the local commit hook

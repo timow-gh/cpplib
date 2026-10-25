@@ -1,0 +1,49 @@
+# Counterpart of the Linux half of .github/workflows/release.yml: on a v* tag, validate the
+# version, build and verify the shared and standalone DEB/TGZ packages, and upload them into the
+# draft Forgejo release that release.yaml (Windows) uploads into as well. release-finalize.yaml
+# publishes the draft once both succeeded. A manual run builds and verifies without publishing.
+
+labels:
+  os: linux
+  env: wsl
+
+when:
+  - event: tag
+    ref: refs/tags/v*
+  - event: manual
+
+steps:
+  - name: validate
+    image: bash
+    commands:
+      - bash .woodpecker/scripts/release-validate.sh
+
+  - name: package-shared
+    image: bash
+    commands:
+      - bash .woodpecker/scripts/linux-package.sh shared
+
+  - name: package-standalone
+    image: bash
+    commands:
+      - bash .woodpecker/scripts/linux-package.sh standalone
+
+  - name: verify-shared
+    image: bash
+    commands:
+      - bash .woodpecker/scripts/linux-verify.sh shared
+
+  - name: verify-standalone
+    image: bash
+    commands:
+      - bash .woodpecker/scripts/linux-verify.sh standalone
+
+  - name: publish
+    image: bash
+    environment:
+      FORGEJO_TOKEN:
+        from_secret: forgejo_token
+    commands:
+      - bash .woodpecker/scripts/release-upload.sh
+    when:
+      - event: tag

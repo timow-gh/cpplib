@@ -1,0 +1,20 @@
+# Counterpart of .github/workflows/ubuntu-static-analysis.yml: the clang debug build, which runs
+# clang-tidy on every target. Ninja -k 0 keeps building independent targets after failures, so
+# clang-tidy reports as many compile and analysis issues as possible.
+
+labels:
+  os: linux
+  env: wsl
+
+when:
+  - event: push
+    branch: main
+  # For pull requests, `branch` is the target branch.
+  - event: pull_request
+    branch: main
+
+steps:
+  - name: clang-tidy
+    image: bash
+    commands:
+      - bash .woodpecker/scripts/linux-build.sh clang-debug -k 0

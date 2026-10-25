@@ -1,0 +1,25 @@
+# Counterpart of .github/workflows/ubuntu-sanitizers.yml: clang debug builds with ASan, TSan and
+# UBSan.
+
+labels:
+  os: linux
+  env: wsl
+
+matrix:
+  SANITIZER:
+    - asan
+    - tsan
+    - ubsan
+
+when:
+  - event: push
+    branch: main
+  # For pull requests, `branch` is the target branch.
+  - event: pull_request
+    branch: main
+
+steps:
+  - name: sanitizer-clang-debug-${SANITIZER}
+    image: bash
+    commands:
+      - bash .woodpecker/scripts/linux-build.sh clang-debug-${SANITIZER}

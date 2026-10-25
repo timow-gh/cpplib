@@ -1,0 +1,33 @@
+# Counterpart of .github/workflows/ubuntu-coverage.yml. The coverage step needs no token and
+# prints the report, for pull requests compared with main; the report is kept on the agent host.
+# Only a push to main uploads it to the Forgejo package registry, with the secret
+# forgejo_package_token; pull request pipelines run unreviewed code and get no secret. There is no
+# pull request comment, which would need a token in the pull request pipeline.
+
+labels:
+  os: linux
+  env: wsl
+
+when:
+  - event: push
+    branch: main
+  # For pull requests, `branch` is the target branch.
+  - event: pull_request
+    branch: main
+
+steps:
+  - name: coverage
+    image: bash
+    commands:
+      - bash .woodpecker/scripts/linux-coverage.sh
+
+  - name: publish-coverage
+    image: bash
+    environment:
+      FORGEJO_PACKAGE_TOKEN:
+        from_secret: forgejo_package_token
+    commands:
+      - bash .woodpecker/scripts/coverage-publish.sh
+    when:
+      - event: push
+        branch: main

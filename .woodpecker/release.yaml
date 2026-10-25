@@ -1,9 +1,10 @@
 # Counterpart of .github/workflows/release.yml for Windows: on a v* tag, validate the version and
-# product identity, build and verify the shared and standalone packages, and publish them as a
-# Forgejo release. A manual run builds and verifies without publishing, like workflow_dispatch.
+# product identity, build and verify the shared and standalone packages, and upload them into a
+# draft Forgejo release. release-linux.yaml adds the Linux packages to the same draft, and
+# release-finalize.yaml publishes it once both succeeded. A manual run builds and verifies without
+# publishing, like workflow_dispatch.
 #
-# Not ported: build-provenance attestations (Forgejo has no equivalent) and the Linux packages
-# (follow-up for a WSL agent; it will upload into the same release).
+# Not ported: build-provenance attestations (Forgejo has no equivalent).
 
 labels:
   os: windows

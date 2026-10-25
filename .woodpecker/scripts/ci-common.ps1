@@ -182,8 +182,9 @@ function Get-ForgejoHeaders {
 # Calls the Forgejo REST API and returns the decoded JSON response.
 #
 # With -AllowNotFound a 404 returns $null instead of throwing, for lookups of things that may
-# not exist yet (the first release, a release for a new tag).
-function Invoke-ForgejoApi([string] $Method = 'Get', [string] $Path, $Body, [switch] $AllowNotFound) {
+# not exist yet (the first release, a release for a new tag); -AllowConflict does the same for a
+# 409, for creating something another workflow may have created first.
+function Invoke-ForgejoApi([string] $Method = 'Get', [string] $Path, $Body, [switch] $AllowNotFound, [switch] $AllowConflict) {
     $request = @{
         Method          = $Method
         Uri             = "$(Get-ForgejoApiUrl)/$Path"
@@ -204,8 +205,90 @@ function Invoke-ForgejoApi([string] $Method = 'Get', [string] $Path, $Body, [swi
         if ($AllowNotFound -and $response -and [int]$response.StatusCode -eq 404) {
             return $null
         }
+        if ($AllowConflict -and $response -and [int]$response.StatusCode -eq 409) {
+            return $null
+        }
         throw "[forgejo-api-failed] $Method $($request.Uri): $($_.Exception.Message)"
     }
+}
+
+# --- Releases --------------------------------------------------------------------------------
+
+# Returns the release of a tag, drafts included, or $null.
+#
+# Lists the releases instead of asking for releases/tags/<tag>, which may not return drafts.
+function Find-Release([string] $Tag) {
+    for ($page = 1; ; $page++) {
+        # Windows PowerShell 5.1 may pass a JSON array on as one object; the ForEach-Object
+        # yields its elements either way.
+        $releases = @(Invoke-ForgejoApi -Path "repos/$env:CI_REPO/releases?limit=50&page=$page" |
+            ForEach-Object { $_ } | Where-Object { $null -ne $_ })
+        if ($releases.Count -eq 0) {
+            return $null
+        }
+        $release = $releases | Where-Object { $_.tag_name -eq $Tag } | Select-Object -First 1
+        if ($release) {
+            return $release
+        }
+    }
+}
+
+# Returns the release of a tag, creating it as a draft if it does not exist yet.
+#
+# The Windows and the Linux release workflows run at the same time, and both may try to create
+# the release; the one that loses gets 409 Conflict and reads the other's release.
+# release-finalize.ps1 publishes the draft once both have uploaded their packages.
+function Get-OrCreateDraftRelease([string] $Tag, [string] $Version) {
+    $release = Find-Release $Tag
+    if ($release) {
+        Write-Host "Reusing the existing release $($release.html_url)"
+        return $release
+    }
+    $release = Invoke-ForgejoApi -Method Post -Path "repos/$env:CI_REPO/releases" -AllowConflict -Body @{
+        tag_name   = $Tag
+        name       = "Release $Version"
+        body       = ''
+        draft      = $true
+        prerelease = $false
+    }
+    if (-not $release) {
+        $release = Find-Release $Tag
+        if (-not $release) {
+            throw "[forgejo-api-failed] creating the release for $Tag returned 409, but no release for $Tag exists"
+        }
+        Write-Host 'Reusing the release created by the other release workflow'
+        return $release
+    }
+    Write-Host "Created the draft release $($release.html_url)"
+    return $release
+}
+
+# Uploads one file as a release asset, replacing an asset with the same name.
+function Publish-ReleaseAsset($Release, [string] $Path) {
+    $name = Split-Path -Leaf $Path
+    $existing = @($Release.assets) | Where-Object { $_.name -eq $name } | Select-Object -First 1
+    if ($existing) {
+        Invoke-ForgejoApi -Method Delete -Path "repos/$env:CI_REPO/releases/$($Release.id)/assets/$($existing.id)" | Out-Null
+        Write-Host "Replacing $name"
+    }
+
+    # curl.exe instead of Invoke-RestMethod: Windows PowerShell 5.1 has no multipart -Form.
+    $uploadUrl = "$(Get-ForgejoApiUrl)/repos/$env:CI_REPO/releases/$($Release.id)/assets?name=$([Uri]::EscapeDataString($name))"
+    $responseFile = [IO.Path]::GetTempFileName()
+    # curl reports errors on stderr; let the status check below decide instead of 'Stop'.
+    $ErrorActionPreference = 'Continue'
+    try {
+        $status = & curl.exe -sS -o $responseFile -w '%{http_code}' -X POST `
+            -H "Authorization: token $env:FORGEJO_TOKEN" -F "attachment=@$Path" $uploadUrl
+        if ($LASTEXITCODE -ne 0 -or $status -ne '201') {
+            $response = Get-Content -Raw $responseFile
+            throw "[forgejo-api-failed] uploading $name returned HTTP $status (curl exit code $LASTEXITCODE): $response"
+        }
+    }
+    finally {
+        Remove-Item -Force $responseFile
+    }
+    Write-Host "Uploaded $name"
 }
 
 # --- Prerequisites ---------------------------------------------------------------------------
