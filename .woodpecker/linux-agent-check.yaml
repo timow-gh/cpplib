@@ -1,4 +1,4 @@
-# Smoke test of the Linux (WSL) agent: shows that a pipeline reaches it and that every tool the
+# Smoke test of the Linux agent: shows that a pipeline reaches it and that every tool the
 # other Linux workflows need is installed. Limit it to `event: manual` once the agent is set up.
 #
 # All logic lives in .woodpecker/scripts: Woodpecker substitutes variables in this file (the raw
@@ -8,7 +8,7 @@
 
 labels:
   os: linux
-  env: wsl
+  env: linux
 
 when:
   - event: [push, manual]

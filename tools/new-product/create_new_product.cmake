@@ -2,7 +2,7 @@
 #
 #   cmake -DNAME=<name> [-DVENDOR=<vendor>] [-DCONTACT="<name> <email>"]
 #         [-DHOMEPAGE=<url>] [-DDESCRIPTION=<text>] [-DFORCE=ON]
-#         -P tools/create_new_product.cmake
+#         -P tools/new-product/create_new_product.cmake
 #
 # What it does:
 #   - Renames the project: every occurrence of the current project name (lower and
@@ -21,12 +21,12 @@
 # is set.
 cmake_minimum_required(VERSION 3.28)
 
-get_filename_component(root "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+get_filename_component(root "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
 
 # --- Validate the arguments --------------------------------------------------
 if (NOT NAME)
     message(FATAL_ERROR "Usage: cmake -DNAME=<name> [-DVENDOR=...] [-DCONTACT=...] [-DHOMEPAGE=...] "
-            "[-DDESCRIPTION=...] [-DFORCE=ON] -P tools/create_new_product.cmake")
+            "[-DDESCRIPTION=...] [-DFORCE=ON] -P tools/new-product/create_new_product.cmake")
 endif ()
 if (NOT NAME MATCHES "^[a-z][a-z0-9_]*$")
     message(FATAL_ERROR "NAME must be a lower-case identifier ([a-z][a-z0-9_]*), it is used for targets, "
@@ -73,7 +73,7 @@ if (NOT files)
     file(GLOB_RECURSE files LIST_DIRECTORIES false RELATIVE "${root}" "${root}/*")
     list(FILTER files EXCLUDE REGEX "^(\\.git|out|build)/")
 endif ()
-list(REMOVE_ITEM files "tools/create_new_product.cmake")
+list(REMOVE_ITEM files "tools/new-product/create_new_product.cmake")
 
 # --- Replace the name in the file contents -----------------------------------
 string(TOUPPER "${old_name}" old_upper)

@@ -1,19 +1,8 @@
 include_guard(GLOBAL)
 
 # CPack configuration. The delivery mode is decided by BUILD_SHARED_LIBS, which the
-# configure preset sets (see "Shipping the application" in ReadMe.md):
-#
-#   shared     (*-shared presets)     components: app, runtime, dev
-#       app     - cpplib_app (+ app-local MSVC runtime DLLs on Windows)
-#       runtime - cpplib.dll / libcpplib.so.* and the License
-#       dev     - headers, import library, CMake package files (the library SDK)
-#   standalone (*-standalone presets) components: app
-#       app     - the self-contained cpplib_app executable and the License
-#
-# Component layout per generator:
-#   TGZ / ZIP - one archive with every component (ready to run, and the SDK)
-#   DEB       - one package per component, with Depends between them
-#   WIX       - one MSI with one feature per component
+# configure preset sets. The components and the packages each generator makes of them are
+# described in "Shipping the application" in ReadMe.md.
 
 string(TOLOWER "${PROJECT_NAME}" PKG_NAME)
 

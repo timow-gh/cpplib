@@ -2,6 +2,9 @@
 # built, verified and uploaded their packages into the draft release: the guarantee of
 # .github/workflows/release.yml that a broken package never gets published. Woodpecker skips this
 # workflow if one of the two fails, so the release stays a draft.
+#
+# A leftover draft: fix the cause and restart the pipeline (uploads replace assets of the same
+# name), or delete the draft in the Forgejo UI if it should not become a release.
 
 labels:
   os: windows

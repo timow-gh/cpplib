@@ -9,8 +9,6 @@ $ErrorActionPreference = 'Stop'
 # Windows PowerShell 5.1 still negotiates TLS 1.0 by default, which current servers refuse.
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$script:ReadmeUrl = '.woodpecker/README.md'
-
 # Runs a script body and turns any failure into one readable log line and exit code 1.
 #
 # Without it, an unhandled exception prints PowerShell's multi-line error record, which buries
@@ -305,8 +303,8 @@ function New-CheckFailed([string] $Problem, [string] $Checked, [string] $Fix) {
 $script:AgentScript = if ($env:WOODPECKER_AGENT_SCRIPT) { $env:WOODPECKER_AGENT_SCRIPT } else { 'the agent start script (run-agent.ps1)' }
 $script:RestartHint = "then restart the agent (environment changes reach the steps only through the agent process)"
 
-# Each check returns New-CheckPassed or New-CheckFailed. The id is the anchor of the matching
-# troubleshooting section in .woodpecker/README.md, so keep both in sync.
+# Each check returns New-CheckPassed or New-CheckFailed. The problem and fix text is
+# the only documentation of a prerequisite, so it has to be self-contained.
 $script:PrerequisiteChecks = [ordered]@{
     'git'           = {
         $git = Get-Command git.exe -ErrorAction SilentlyContinue
@@ -401,7 +399,7 @@ $script:PrerequisiteChecks = [ordered]@{
     'forgejo-token' = {
         if (-not $env:FORGEJO_TOKEN) {
             return New-CheckFailed 'FORGEJO_TOKEN is empty' '$env:FORGEJO_TOKEN (Woodpecker secret forgejo_token)' `
-                'create a Forgejo access token (scopes: write:repository, read:user) and add it in Woodpecker as the repository secret forgejo_token, available for the tag and manual events only (push and pull_request pipelines run unreviewed branch code)'
+                'create a Forgejo access token and add it in Woodpecker as the repository secret forgejo_token; its scopes and events are listed in .woodpecker/README.md#secrets'
         }
         return New-CheckPassed 'FORGEJO_TOKEN is set'
     }
@@ -436,7 +434,7 @@ $script:PrerequisiteChecks = [ordered]@{
 #
 # Runs every requested check instead of stopping at the first failure, so one run lists
 # everything that is missing. Each failure is printed as a `[prerequisite-missing] id=<id>`
-# block with problem, what was checked, a concrete fix and the README anchor, a format meant to
+# block with problem, what was checked, and a concrete fix, a format meant to
 # be read by humans and grepped by coding agents. Exits with code 2 if a required check fails;
 # checks passed via -Warn are reported the same way but never fail the step.
 function Assert-Prerequisites([string[]] $Require = @(), [string[]] $Warn = @()) {
@@ -464,7 +462,6 @@ function Assert-Prerequisites([string[]] $Require = @(), [string[]] $Warn = @())
         Write-Host "  problem:  $($result.Problem)"
         Write-Host "  checked:  $($result.Checked)"
         Write-Host "  fix:      $($result.Fix)"
-        Write-Host "  docs:     $script:ReadmeUrl#$($check.Id)"
     }
     if ($failedCount -gt 0) {
         $agent = if ($env:CI_MACHINE) { $env:CI_MACHINE } else { $env:COMPUTERNAME }

@@ -2,8 +2,33 @@
 
 set -eu
 
+# The commit message rules of this repository. They are written only here: the local commit-msg
+# hook and the commit message checks of both CI systems run this script, and it prints the rules
+# on --help and with every rejection.
+
 VALID_TYPES="feat|fix|perf|docs|refactor|test|build|ci|chore|revert"
 COMMIT_RE="^(${VALID_TYPES})(\([a-z0-9][a-z0-9._-]*\))?!?: .+"
+
+print_rules() {
+    cat <<EOF
+Use Conventional Commits:
+  type[(scope)][!]: short imperative summary
+
+Allowed types:
+  $(printf '%s' "$VALID_TYPES" | sed 's/|/, /g')
+
+Recommended scopes (not enforced):
+  api, core, app, cmake, package, ci, docs, tests
+
+Breaking changes: put ! after the type or scope, or add a "BREAKING CHANGE:" footer.
+
+Examples:
+  feat(api): add an overload taking a string
+  fix(package): ship the license in the standalone DEB
+  ci(release): generate release notes from commits
+  feat(api)!: rename libraryFunction
+EOF
+}
 
 usage() {
     cat <<'EOF'
@@ -12,15 +37,8 @@ Usage:
   check-conventional-commit.sh --message <subject>
   check-conventional-commit.sh --range <git-range>
 
-Accepted subject format:
-  type[(scope)][!]: short imperative summary
-
-Examples:
-  feat(api): add camera auto-fit option
-  fix(opengl): restore transparency sorting
-  ci(release): generate release notes from commits
-  feat(api)!: rename public camera enum
 EOF
+    print_rules
 }
 
 first_subject_from_file() {
@@ -54,22 +72,10 @@ validate_subject() {
         return 0
     fi
 
-    cat >&2 <<EOF
-Invalid commit message:
-  $subject
-
-Use Conventional Commits:
-  type[(scope)][!]: short imperative summary
-
-Allowed types:
-  feat, fix, perf, docs, refactor, test, build, ci, chore, revert
-
-Examples:
-  feat(api): add camera auto-fit option
-  fix(opengl): restore transparency sorting
-  ci(release): generate release notes from commits
-  feat(api)!: rename public camera enum
-EOF
+    {
+        printf 'Invalid commit message:\n  %s\n\n' "$subject"
+        print_rules
+    } >&2
     return 1
 }
 

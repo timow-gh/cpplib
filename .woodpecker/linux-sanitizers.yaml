@@ -3,7 +3,7 @@
 
 labels:
   os: linux
-  env: wsl
+  env: linux
 
 matrix:
   SANITIZER:

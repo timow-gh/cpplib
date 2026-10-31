@@ -4,8 +4,9 @@
 
 . "$(dirname "${BASH_SOURCE[0]}")/ci-common.sh"
 
-printf 'Agent: %s on %s, %s, bash %s\n' "${CI_MACHINE:-}" "$(hostname)" \
-    "$(. /etc/os-release && printf '%s' "$PRETTY_NAME")" "$BASH_VERSION"
+# HOME is where the local backend points it for the steps; no cache may depend on it.
+printf 'Agent: %s on %s, %s, bash %s, HOME=%s\n' "${CI_MACHINE:-}" "$(hostname)" \
+    "$(. /etc/os-release && printf '%s' "$PRETTY_NAME")" "$BASH_VERSION" "$HOME"
 # The tokens are Woodpecker secrets of the repository, not part of the agent, so the workflows
 # that need them check them themselves.
 assert_prerequisites --require git cmake ninja vcpkg-root gcc clang clang-rt clang-tidy gcov lcov \

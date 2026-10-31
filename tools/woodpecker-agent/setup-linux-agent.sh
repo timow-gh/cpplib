@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-# Sets up the Linux Woodpecker agent for this repository in a WSL Ubuntu 24.04 distribution: the
-# steps of .woodpecker/README.md#linux-agent-setup-wsl in one run. Safe to run again, e.g. to
-# update the agent to the version of the server.
+# Sets up the Linux Woodpecker agent for this repository on an Ubuntu 24.04 machine or in a WSL
+# distribution of it, in one run. tools/woodpecker-agent/linux.md has the commands for setting up,
+# starting, updating and removing the agent. Safe to run again, e.g. to update the agent to the
+# version of the server.
 #
 # Run it as the user that will run the agent; it calls sudo where root is needed.
 
 set -Eeuo pipefail
 
-# The versions the presets and the agent check expect, see .woodpecker/README.md.
+# shellcheck source=linux-agent-common.sh
+. "$(dirname "${BASH_SOURCE[0]}")/linux-agent-common.sh"
+
+# The versions the presets and the agent check expect.
 readonly GCC_VERSION=14
 readonly CLANG_VERSION=20
 readonly DEFAULT_PLUGIN_GIT_VERSION=2.11.0
-readonly AGENT_DIR="$HOME/woodpecker-agent"
-readonly VCPKG_DIR="$HOME/vcpkg"
-# Not named woodpecker-agent.service, which the Woodpecker .deb package installs with its own
-# environment file.
-readonly SYSTEMD_UNIT=woodpecker-agent-wsl.service
+readonly DEFAULT_VCPKG_DIR="$HOME/vcpkg"
 
 usage() {
     cat <<EOF
@@ -25,31 +25,26 @@ Usage: $(basename "$0") --agent-version <x.y.z> [--server <host:port>] [options]
   --server HOST:PORT        gRPC address of the server (WOODPECKER_SERVER); required unless
                             $AGENT_DIR/run-agent.sh already exists
   --plugin-git-version VER  plugin-git release (default $DEFAULT_PLUGIN_GIT_VERSION)
-  --hostname NAME           agent name shown in Woodpecker (default wsl-ubuntu)
+  --vcpkg-dir DIR           existing vcpkg git checkout to use, or where to clone it
+                            (default $DEFAULT_VCPKG_DIR); pass it on every run
+  --hostname NAME           agent name shown in Woodpecker (default linux-ubuntu)
   --max-workflows N         workflows the agent runs at once (default 1)
-  --forgejo-url URL         only if CI_FORGE_URL is not reachable from WSL
+  --forgejo-url URL         only if CI_FORGE_URL is not reachable from this machine
   --systemd                 run the agent as the systemd service $SYSTEMD_UNIT
   --force                   regenerate an existing run-agent.sh
 
 Register the agent first (Woodpecker UI: Settings -> Agents -> Add agent). The script asks for
-its token, or reads it from WOODPECKER_AGENT_SECRET, unless $AGENT_DIR/agent.env exists.
+its token, or reads it from WOODPECKER_AGENT_SECRET, unless $AGENT_ENV_FILE exists.
+manage-linux-agent.sh starts, stops, shows and removes the agent afterwards.
 EOF
-}
-
-info() {
-    printf '\n==> %s\n' "$*"
-}
-
-fail() {
-    printf '\n[error] %s\n' "$*" >&2
-    exit 1
 }
 
 parse_arguments() {
     AGENT_VERSION=''
     SERVER=''
     PLUGIN_GIT_VERSION=$DEFAULT_PLUGIN_GIT_VERSION
-    AGENT_HOSTNAME=wsl-ubuntu
+    AGENT_HOSTNAME=linux-ubuntu
+    VCPKG_DIR=$DEFAULT_VCPKG_DIR
     MAX_WORKFLOWS=1
     FORGEJO_URL=''
     USE_SYSTEMD=0
@@ -59,6 +54,7 @@ parse_arguments() {
             --agent-version) AGENT_VERSION=${2:?--agent-version needs a value}; shift 2 ;;
             --server) SERVER=${2:?--server needs a value}; shift 2 ;;
             --plugin-git-version) PLUGIN_GIT_VERSION=${2:?--plugin-git-version needs a value}; shift 2 ;;
+            --vcpkg-dir) VCPKG_DIR=${2:?--vcpkg-dir needs a value}; shift 2 ;;
             --hostname) AGENT_HOSTNAME=${2:?--hostname needs a value}; shift 2 ;;
             --max-workflows) MAX_WORKFLOWS=${2:?--max-workflows needs a value}; shift 2 ;;
             --forgejo-url) FORGEJO_URL=${2:?--forgejo-url needs a value}; shift 2 ;;
@@ -72,6 +68,8 @@ parse_arguments() {
     [[ $MAX_WORKFLOWS =~ ^[1-9][0-9]*$ ]] || fail "--max-workflows must be a positive number"
     # The release tags carry a leading v, the version printed in the Woodpecker UI does not.
     AGENT_VERSION=${AGENT_VERSION#v}
+    # run-agent.sh starts in another directory, so a relative path would point somewhere else there.
+    VCPKG_DIR=$(realpath -m -- "$VCPKG_DIR")
     if [[ -z $SERVER && ( $FORCE == 1 || ! -f $AGENT_DIR/run-agent.sh ) ]]; then
         usage >&2
         fail '--server is required to write run-agent.sh'
@@ -85,7 +83,7 @@ check_system() {
     if [[ ${ID:-} != ubuntu ]] || ! dpkg --compare-versions "${VERSION_ID:-0}" ge 24.04; then
         fail "${PRETTY_NAME:-this system} is not supported: the CI needs Ubuntu 24.04 or newer" \
             "(older releases lack gcc-$GCC_VERSION, CMake 3.28 and a git that plugin-git can use)." \
-            'Install it with: wsl --install -d Ubuntu-24.04'
+            'In WSL, install it with: wsl --install -d Ubuntu-24.04'
     fi
     case $(uname -m) in
         x86_64) ARCH=amd64 ;;
@@ -93,8 +91,22 @@ check_system() {
         *) fail "unsupported architecture $(uname -m)" ;;
     esac
     if ((USE_SYSTEMD)) && [[ ! -d /run/systemd/system ]]; then
-        fail 'systemd is not running in this distribution. Add "[boot]" and "systemd=true" to' \
-            '/etc/wsl.conf, run "wsl --shutdown" in Windows, then start the distribution again.'
+        if is_wsl; then
+            fail 'systemd is not running in this distribution. Add "[boot]" and "systemd=true" to' \
+                '/etc/wsl.conf, run "wsl --shutdown" in Windows, then start the distribution again.'
+        fi
+        fail 'systemd is not running on this machine, so --systemd cannot install the service'
+    fi
+}
+
+# Checked before anything is installed: vcpkg resolves the builtin-baseline of vcpkg.json from the
+# git history of the checkout, so a copy without .git (a zip download, the one bundled with an IDE)
+# cannot work, and git clone refuses a non-empty directory.
+check_vcpkg_directory() {
+    if [[ -d $VCPKG_DIR && ! -d $VCPKG_DIR/.git && -n $(ls -A "$VCPKG_DIR") ]]; then
+        fail "$VCPKG_DIR exists but is not a git checkout of vcpkg." \
+            "Clone it (git clone https://github.com/microsoft/vcpkg <dir>) and pass --vcpkg-dir <dir>," \
+            'or move the existing folder away.'
     fi
 }
 
@@ -179,36 +191,27 @@ install_agent_binaries() {
 }
 
 write_agent_env() {
-    local env_file="$AGENT_DIR/agent.env"
-    if [[ -f $env_file ]]; then
-        info "Keeping the agent token in $env_file"
+    if [[ -f $AGENT_ENV_FILE ]]; then
+        info "Keeping the agent token in $AGENT_ENV_FILE (manage-linux-agent.sh set-token replaces it)"
         return
     fi
-    local secret=${WOODPECKER_AGENT_SECRET:-}
-    if [[ -z $secret ]]; then
-        [[ -t 0 ]] || fail "no agent token: set WOODPECKER_AGENT_SECRET or create $env_file"
-        read -rsp 'Agent token (Woodpecker UI: Settings -> Agents): ' secret
-        printf '\n'
-    fi
-    [[ -n $secret ]] || fail 'the agent token is empty'
-    info "Storing the agent token in $env_file"
-    (umask 077 && printf 'WOODPECKER_AGENT_SECRET=%s\n' "$secret" > "$env_file")
+    save_agent_token
 }
 
 write_run_agent_script() {
     local script="$AGENT_DIR/run-agent.sh"
     if [[ -f $script && $FORCE == 0 ]]; then
-        info "Keeping $script (--force regenerates it)"
+        info "Keeping $script (--force regenerates it with what this version of the script writes)"
         return
     fi
     info "Writing $script"
-    mkdir -p "$AGENT_DIR/cache/cpm" "$AGENT_DIR/coverage"
+    mkdir -p "$AGENT_DIR/cache/cpm" "$AGENT_DIR/cache/vcpkg" "$AGENT_DIR/coverage"
     {
         cat <<'EOF'
 #!/usr/bin/env bash
-# Generated by tools/woodpecker/setup-linux-agent.sh of the cpplib repository. Pipeline steps on
-# the local backend inherit this environment, so restart the agent after changing it. See
-# .woodpecker/README.md#linux-agent-setup-wsl.
+# Generated by tools/woodpecker-agent/setup-linux-agent.sh. Pipeline steps on the local backend
+# inherit this environment, so restart the agent after changing it. See
+# tools/woodpecker-agent/linux.md.
 set -euo pipefail
 EOF
         printf 'agent_dir=%q\n' "$AGENT_DIR"
@@ -221,26 +224,30 @@ EOF
         cat <<'EOF'
 # Every pipeline starts in a fresh workspace; this keeps CPM's GoogleTest download.
 export CPM_SOURCE_CACHE="$agent_dir/cache/cpm"
-# Coverage reports of every run, see "Coverage" in the README.
+# The local backend points HOME at the workflow directory, which is deleted after every run, so
+# vcpkg's default binary cache below HOME would rebuild the dependencies every time.
+export VCPKG_DEFAULT_BINARY_CACHE="$agent_dir/cache/vcpkg"
+# Coverage reports of every run, kept by .woodpecker/scripts/linux-coverage.sh.
 export COVERAGE_REPORT_DIR="$agent_dir/coverage"
 # Lets the CI scripts name this file in their fix hints.
 export WOODPECKER_AGENT_SCRIPT="$agent_dir/run-agent.sh"
 EOF
         if [[ -n $FORGEJO_URL ]]; then
-            printf '# CI_FORGE_URL is not reachable from WSL.\nexport FORGEJO_URL=%q\n' "$FORGEJO_URL"
+            printf '# CI_FORGE_URL is not reachable from this machine.\nexport FORGEJO_URL=%q\n' "$FORGEJO_URL"
         else
-            printf '# Only if CI_FORGE_URL is not reachable from WSL:\n# export FORGEJO_URL="http://<host>:<port>"\n'
+            printf '# Only if CI_FORGE_URL is not reachable from this machine:\n# export FORGEJO_URL="http://<host>:<port>"\n'
         fi
         cat <<'EOF'
 
 set -a
 . "$agent_dir/agent.env"
 set +a
+export WOODPECKER_AGENT_CONFIG_FILE="$agent_dir/agent.conf"
 EOF
         printf 'export WOODPECKER_SERVER=%q\n' "$SERVER"
         printf 'export WOODPECKER_BACKEND=local\n'
         printf 'export WOODPECKER_HOSTNAME=%q\n' "$AGENT_HOSTNAME"
-        printf 'export WOODPECKER_AGENT_LABELS="os=linux,env=wsl"\n'
+        printf 'export WOODPECKER_AGENT_LABELS="os=linux,env=linux"\n'
         printf 'export WOODPECKER_MAX_WORKFLOWS=%q\n' "$MAX_WORKFLOWS"
         printf '\nexec "$agent_dir/woodpecker-agent"\n'
     } > "$script.new"
@@ -248,11 +255,11 @@ EOF
     mv -f "$script.new" "$script"
 }
 
-# Newer WSL kernels map memory with more ASLR entropy than ThreadSanitizer supports
-# ("FATAL: ThreadSanitizer: unexpected memory mapping").
+# Newer kernels (WSL's among them) map memory with more ASLR entropy than ThreadSanitizer supports
+# ("FATAL: ThreadSanitizer: unexpected memory mapping"). Only root can read the current value.
 limit_aslr_entropy() {
     local current
-    current=$(< /proc/sys/vm/mmap_rnd_bits)
+    current=$(sudo sysctl -n vm.mmap_rnd_bits)
     if ((current > 28)); then
         info "Lowering vm.mmap_rnd_bits from $current to 28 for ThreadSanitizer (sudo)"
         printf 'vm.mmap_rnd_bits = 28\n' | sudo tee /etc/sysctl.d/60-tsan-mmap-rnd-bits.conf > /dev/null
@@ -264,7 +271,7 @@ install_systemd_unit() {
     info "Installing and (re)starting $SYSTEMD_UNIT (sudo)"
     sudo tee "/etc/systemd/system/$SYSTEMD_UNIT" > /dev/null <<EOF
 [Unit]
-Description=Woodpecker agent (local backend, see cpplib .woodpecker/README.md)
+Description=Woodpecker agent (local backend, see tools/woodpecker-agent/linux.md)
 Wants=network-online.target
 After=network-online.target
 
@@ -281,33 +288,61 @@ EOF
     sudo systemctl enable "$SYSTEMD_UNIT"
     # restart, not start: a rerun has to load the new binary and environment.
     sudo systemctl restart "$SYSTEMD_UNIT"
-    if systemctl is-enabled --quiet woodpecker-agent.service 2> /dev/null ||
-        systemctl is-active --quiet woodpecker-agent.service 2> /dev/null; then
-        printf '\n[warning] woodpecker-agent.service (from the .deb package) is enabled or running as well.\n'
-        printf '          Two agents would take the same jobs; stop it with:\n'
-        printf '          sudo systemctl disable --now woodpecker-agent.service\n'
+}
+
+# The Woodpecker .deb package installs its own woodpecker-agent.service. It runs as the user
+# woodpecker, without the compiler pins, VCPKG_ROOT and the caches of run-agent.sh, and once
+# started it takes jobs as a second agent.
+warn_about_deb_package() {
+    local status
+    status=$(dpkg-query -W -f='${Status}' woodpecker-agent 2> /dev/null) || status=''
+    if [[ $status == *'install ok installed'* ]]; then
+        cat <<'EOF'
+
+[warning] The Woodpecker .deb package is installed; this setup does not use it. Its
+          woodpecker-agent.service would run a second, misconfigured agent. Remove it:
+          sudo apt remove woodpecker-agent
+EOF
     fi
 }
 
-print_next_steps() {
-    local distro=${WSL_DISTRO_NAME:-Ubuntu-24.04}
-    info 'Done. Next steps:'
+# WSL stops a distribution once no process runs in it. The scheduled task starts the
+# distribution at logon and keeps it running: with --systemd a process that only waits, which
+# keeps the agent service alive, otherwise the agent itself.
+print_wsl_task_steps() {
+    local distro=${WSL_DISTRO_NAME:-Ubuntu-24.04} wsl_arguments
     if ((USE_SYSTEMD)); then
-        cat <<EOF
-- WSL still has to start the distribution at logon and keep it running. Windows Task Scheduler:
-  trigger "At log on", action wsl.exe, arguments: -d $distro --exec sleep infinity
-- Logs: journalctl -u $SYSTEMD_UNIT -f
-EOF
+        wsl_arguments="-d $distro --exec sleep infinity"
     else
-        cat <<EOF
-- Start the agent at logon with a Windows scheduled task (Task Scheduler -> Create Task),
-  trigger "At log on", action wsl.exe, arguments: -d $distro -- bash -lc $AGENT_DIR/run-agent.sh
-  Or start it by hand now: $AGENT_DIR/run-agent.sh
-  If an agent is already running, restart it so it loads the new binary and environment.
-EOF
+        wsl_arguments="-d $distro -- bash -lc $AGENT_DIR/run-agent.sh"
     fi
     cat <<EOF
-- Optional: limit the WSL VM in %UserProfile%\\.wslconfig ([wsl2] memory=12GB, processors=8).
+- In a Windows PowerShell, register the task that starts WSL and the agent at logon:
+
+  Register-ScheduledTask -Force -TaskName '$(wsl_task_name)' \`
+      -Action (New-ScheduledTaskAction -Execute wsl.exe -Argument '$wsl_arguments') \`
+      -Trigger (New-ScheduledTaskTrigger -AtLogOn -User \$env:USERNAME) \`
+      -Settings (New-ScheduledTaskSettingsSet -ExecutionTimeLimit 0 -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries)
+
+EOF
+}
+
+print_next_steps() {
+    info 'Done. Next steps:'
+    if is_wsl; then
+        print_wsl_task_steps
+    fi
+    if ((USE_SYSTEMD)); then
+        printf -- '- Status, log, stop, start, removal: bash %s/manage-linux-agent.sh <command> (--help lists them)\n' \
+            "$(dirname "${BASH_SOURCE[0]}")"
+    else
+        printf -- '- Start the agent by hand: %s\n' "$AGENT_DIR/run-agent.sh"
+        printf -- '  If an agent is already running, restart it so it loads the new binary and environment.\n'
+    fi
+    if is_wsl; then
+        printf -- '- Optional: limit the WSL VM in %%UserProfile%%\\.wslconfig ([wsl2] memory=12GB, processors=8).\n'
+    fi
+    cat <<EOF
 - Check the agent: run the linux-agent-check pipeline manually in Woodpecker; every line should
   read [prerequisite-ok].
 EOF
@@ -316,6 +351,7 @@ EOF
 main() {
     parse_arguments "$@"
     check_system
+    check_vcpkg_directory
     WORK_DIR=$(mktemp -d)
     trap 'rm -rf "$WORK_DIR"' EXIT
     mkdir -p "$AGENT_DIR"
@@ -329,6 +365,7 @@ main() {
     if ((USE_SYSTEMD)); then
         install_systemd_unit
     fi
+    warn_about_deb_package
     print_next_steps
 }
 

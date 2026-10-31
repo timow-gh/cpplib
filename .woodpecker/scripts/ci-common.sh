@@ -6,8 +6,6 @@
 
 set -Eeuo pipefail
 
-readonly README_URL='.woodpecker/README.md'
-
 # The agent's start script exports its own path, so fix hints can name the file to edit.
 AGENT_SCRIPT=${WOODPECKER_AGENT_SCRIPT:-'the agent start script (run-agent.sh)'}
 RESTART_HINT='then restart the agent (environment changes reach the steps only through the agent process)'
@@ -223,8 +221,8 @@ publish_release_asset() {
 # --- Prerequisites ---------------------------------------------------------------------------
 
 # Each check_<id> function (hyphens in the id become underscores) calls check_passed or
-# check_failed as its last command. The id is the anchor of the matching troubleshooting section
-# in .woodpecker/README.md, so keep both in sync.
+# check_failed as its last command. The problem and fix text is the only
+# documentation of a prerequisite, so it has to be self-contained.
 check_passed() {
     CHECK_DETAIL=$1
 }
@@ -236,7 +234,7 @@ check_failed() {
     return 1
 }
 
-APT_HINT="install it in the WSL distribution (sudo apt-get install"
+APT_HINT="install it on the agent machine (sudo apt-get install"
 
 check_git() {
     command -v git >/dev/null || {
@@ -332,7 +330,7 @@ check_clang_tidy() {
 }
 
 check_vcpkg_root() {
-    local fix="git clone https://github.com/microsoft/vcpkg ~/vcpkg (inside WSL, not below /mnt/c), run ~/vcpkg/bootstrap-vcpkg.sh, add export VCPKG_ROOT=~/vcpkg to $AGENT_SCRIPT, $RESTART_HINT"
+    local fix="git clone https://github.com/microsoft/vcpkg ~/vcpkg (on the Linux filesystem; in WSL not below /mnt/c), run ~/vcpkg/bootstrap-vcpkg.sh, add export VCPKG_ROOT=~/vcpkg to $AGENT_SCRIPT, $RESTART_HINT"
     if [[ -z ${VCPKG_ROOT:-} ]]; then
         check_failed 'VCPKG_ROOT is not set in the agent environment' '$VCPKG_ROOT' "$fix"
         return
@@ -427,7 +425,7 @@ check_coverage_dir() {
 check_forgejo_token() {
     if [[ -z ${FORGEJO_TOKEN:-} ]]; then
         check_failed 'FORGEJO_TOKEN is empty' '$FORGEJO_TOKEN (Woodpecker secret forgejo_token)' \
-            'create a Forgejo access token (scopes: write:repository, read:user) and add it in Woodpecker as the repository secret forgejo_token, available for the tag and manual events only (push and pull_request pipelines run unreviewed branch code)'
+            'create a Forgejo access token and add it in Woodpecker as the repository secret forgejo_token; its scopes and events are listed in .woodpecker/README.md#secrets'
         return
     fi
     check_passed 'FORGEJO_TOKEN is set'
@@ -436,7 +434,7 @@ check_forgejo_token() {
 check_forgejo_package_token() {
     if [[ -z ${FORGEJO_PACKAGE_TOKEN:-} ]]; then
         check_failed 'FORGEJO_PACKAGE_TOKEN is empty' '$FORGEJO_PACKAGE_TOKEN (Woodpecker secret forgejo_package_token)' \
-            'create a Forgejo access token with only the write:package scope and add it in Woodpecker as the repository secret forgejo_package_token, available for the push event only'
+            'create a Forgejo access token and add it in Woodpecker as the repository secret forgejo_package_token; its scope and events are listed in .woodpecker/README.md#secrets'
         return
     fi
     check_passed 'FORGEJO_PACKAGE_TOKEN is set'
@@ -464,7 +462,7 @@ check_forgejo_api() {
 #
 # Runs every requested check instead of stopping at the first failure, so one run lists
 # everything that is missing. Each failure is printed as a `[prerequisite-missing] id=<id>`
-# block with problem, what was checked, a concrete fix and the README anchor, the same format as
+# block with problem, what was checked, and a concrete fix, the same format as
 # Assert-Prerequisites in ci-common.ps1. Exits with code 2 if a required check fails; checks
 # passed after --warn are reported the same way but never fail the step.
 assert_prerequisites() {
@@ -501,7 +499,6 @@ assert_prerequisites() {
         printf '  problem:  %s\n' "$CHECK_PROBLEM"
         printf '  checked:  %s\n' "$CHECK_CHECKED"
         printf '  fix:      %s\n' "$CHECK_FIX"
-        printf '  docs:     %s#%s\n' "$README_URL" "$id"
     done
     if ((failed_count > 0)); then
         printf "[prerequisites] %s of %s required checks failed - the agent '%s' is not set up for this workflow\n" \

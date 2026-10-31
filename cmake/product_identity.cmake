@@ -1,7 +1,7 @@
 # Product identity: who ships this product, and how installed copies of it are
 # recognized by later versions.
 #
-# The values are written once by tools/create_new_product.cmake when a new product
+# The values are written once by tools/new-product/create_new_product.cmake when a new product
 # is created from this template. Name, version, description and homepage live in
 # the project() call of the root CMakeLists.txt.
 
