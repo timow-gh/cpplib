@@ -16,22 +16,19 @@ the address its `WOODPECKER_GRPC_ADDR` listens on.
    .\tools\woodpecker-agent\setup-windows-agent.ps1 -AgentVersion 3.19.0 -Server <host>:<grpc-port> -ScheduledTask
    ```
 
-   The script asks for the token once.
+   The script first asks for the token and for your Windows password (with a Microsoft account:
+   its password, not the PIN). Windows stores the password with the task, so that the agent
+   starts at every boot, whether anyone logs on or not. `-StartAt Logon` starts it at logon
+   instead and needs no password.
 
-3. Start the agent and check it:
+3. The agent is running. Check it: run the `windows-agent-check` pipeline manually in Woodpecker;
+   every line should read `[prerequisite-ok]`.
 
-   ```powershell
-   .\tools\woodpecker-agent\manage-windows-agent.ps1 start
-   ```
-
-   Then run the `windows-agent-check` pipeline manually in Woodpecker; every line should read
-   `[prerequisite-ok]`.
-
-From now on the agent starts at every logon. It lands in `~\woodpecker-agent` and vcpkg in
-`~\vcpkg`; `-AgentDirectory` and `-VcpkgRoot` change that. On a machine other than the server's,
-the agent needs access to the server's gRPC port and to Forgejo; if the Forgejo address the server
-uses does not resolve there, add `-ForgejoUrl`. `Get-Help .\tools\woodpecker-agent\setup-windows-agent.ps1 -Detailed`
-lists all options.
+The agent lands in `~\woodpecker-agent` and vcpkg in `~\vcpkg`; `-AgentDirectory` and `-VcpkgRoot`
+change that. `-Priority BelowNormal` or `Idle` lets other programs, such as games, come first. On a
+machine other than the server's, the agent needs access to the server's gRPC port and to Forgejo;
+if the Forgejo address the server uses does not resolve there, add `-ForgejoUrl`.
+`Get-Help .\tools\woodpecker-agent\setup-windows-agent.ps1 -Detailed` lists all options.
 
 ### Existing vcpkg
 
@@ -46,8 +43,8 @@ process only, so your own `VCPKG_ROOT` and vcpkg cache stay as they are.
 ## Start, stop, read the log
 
 ```powershell
-.\tools\woodpecker-agent\manage-windows-agent.ps1 status    # task, process, last log lines
-.\tools\woodpecker-agent\manage-windows-agent.ps1 stop      # a running pipeline is aborted
+.\tools\woodpecker-agent\manage-windows-agent.ps1 status    # start mode, task, process, last log lines
+.\tools\woodpecker-agent\manage-windows-agent.ps1 stop      # until the next start or boot; aborts a running pipeline
 .\tools\woodpecker-agent\manage-windows-agent.ps1 start
 .\tools\woodpecker-agent\manage-windows-agent.ps1 restart
 .\tools\woodpecker-agent\manage-windows-agent.ps1 log       # follow the log; Ctrl+C ends it
@@ -62,16 +59,23 @@ agent and check *Settings → Agents*.
 
 ```powershell
 .\tools\woodpecker-agent\setup-windows-agent.ps1 -AgentVersion 3.19.0 -Server <host>:<grpc-port> -Force
-.\tools\woodpecker-agent\manage-windows-agent.ps1 restart
 ```
 
-`-Force` regenerates `run-agent.ps1`, which a change of this repository may need. If the setup used
-a non-default `-AgentDirectory` or `-VcpkgRoot`, pass the same value again.
+The script restarts the agent itself. `-Force` regenerates `run-agent.ps1`, which a change of this
+repository or of `-Priority` needs. If the setup used a non-default `-AgentDirectory`, `-VcpkgRoot`
+or `-Priority`, pass the same value again.
 
 To replace the agent's token, e.g. after creating the agent anew in Woodpecker:
 
 ```powershell
 .\tools\woodpecker-agent\manage-windows-agent.ps1 set-token
+```
+
+After you change your Windows password, the task can't start the agent at boot until it has the
+new one. In an elevated PowerShell:
+
+```powershell
+.\tools\woodpecker-agent\manage-windows-agent.ps1 set-password
 ```
 
 ## Remove
@@ -83,8 +87,9 @@ task runs with highest privileges):
 .\tools\woodpecker-agent\manage-windows-agent.ps1 uninstall
 ```
 
-It asks before it stops the agent and deletes its task and directory, then lists what is left to
-do: delete the agent in Woodpecker (*Settings → Agents*), so that the server stops listing it.
+It asks before it stops the agent and deletes the files the setup created, the directory if
+nothing else is in it, and then the task. It lists what is left to do: delete the agent in
+Woodpecker (*Settings → Agents*), so that the server stops listing it.
 
 The script leaves these in place, because other things on the machine may use them. Remove them by
 hand if you want the machine back as it was:
@@ -99,11 +104,18 @@ hand if you want the machine back as it was:
 
 The agent runs natively, with Woodpecker's local backend: pipeline steps run directly on the
 machine, as the user that runs the agent. `setup-windows-agent.ps1` stores the agent token
-encrypted for that user (DPAPI), which is why the scheduled task runs as the same user.
+encrypted for that user (DPAPI), which is why the scheduled task runs as the same user. The agent
+keeps the token out of the pipeline steps' environment, but the steps run as the same user and
+could decrypt the file: only let pipelines run code you trust.
 
-Elevation is needed for `-ScheduledTask`: the task runs the agent with highest privileges at every
-logon, because release pipelines install the MSI per machine to verify it. Without `-ScheduledTask`
-the script needs no elevation; start `run-agent.ps1` by hand then, elevated for release pipelines.
+`run-agent.ps1` restarts the agent whenever it exits, waiting longer after each quick exit (up to
+5 minutes). It writes the agent's output to `agent.log`, which rolls over to `agent.log.1` at
+10 MB.
+
+Elevation is needed for `-ScheduledTask`: the task runs the agent with highest privileges, because
+release pipelines install the MSI per machine to verify it. A task that starts at boot runs without
+a desktop (session 0), which the builds don't need. Without `-ScheduledTask` the script needs no
+elevation; start `run-agent.ps1` by hand then, elevated for release pipelines.
 `-InstallTools` installs the build tools with winget (and WiX v3 with Chocolatey); without it, the
 `windows-agent-check` pipeline reports what is missing.
 

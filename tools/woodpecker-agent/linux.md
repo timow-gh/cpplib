@@ -18,7 +18,7 @@ checkout of this repository:
 
 ```sh
 bash tools/woodpecker-agent/setup-linux-agent.sh --agent-version 3.19.0 \
-    --server <host>:<grpc-port> --systemd
+    --server <host>:<grpc-port>
 ```
 
 The agent starts at boot. Check it by running the `linux-agent-check` pipeline manually in
@@ -37,18 +37,20 @@ Inside the distribution, run the same command as above, with the path of the che
 
 ```sh
 bash /mnt/c/<path to this repository>/tools/woodpecker-agent/setup-linux-agent.sh --agent-version 3.19.0 \
-    --server <host>:<grpc-port> --systemd
+    --server <host>:<grpc-port>
 ```
 
-If it says systemd is not running, it also says what to add to `/etc/wsl.conf`. At its end the
-script prints a `Register-ScheduledTask` command: paste it into a Windows PowerShell. From then on
-WSL and the agent start at every logon. Check the agent as above.
+If it says systemd is not running, it also says what to add to `/etc/wsl.conf`. The script
+registers a Windows task that starts WSL and the agent at every logon, without a window; if WSL
+can't reach Windows, it prints the command to paste into a Windows PowerShell. Check the agent as
+above.
 
 ### Options
 
 On a machine other than the server's, the agent needs access to the server's gRPC port and to
-Forgejo; if the Forgejo address the server uses does not resolve there, add `--forgejo-url`. `--help`
-lists all options.
+Forgejo; if the Forgejo address the server uses does not resolve there, add `--forgejo-url`.
+`--priority below-normal` or `idle` lets other work on the machine come first. `--help` lists all
+options.
 
 ### Existing vcpkg
 
@@ -78,7 +80,7 @@ and check *Settings → Agents*.
 
 ```sh
 bash tools/woodpecker-agent/setup-linux-agent.sh --agent-version 3.19.0 \
-    --server <host>:<grpc-port> --systemd --force
+    --server <host>:<grpc-port> --force
 ```
 
 The script restarts the service itself. `--force` regenerates `run-agent.sh`, which a change of
@@ -99,8 +101,8 @@ bash tools/woodpecker-agent/manage-linux-agent.sh uninstall
 ```
 
 It asks before it stops the agent and deletes its service and `~/woodpecker-agent` (with the kept
-coverage reports). In WSL it also removes the Windows task that starts WSL, or prints the command
-when it can't. Then delete the agent in Woodpecker (*Settings → Agents*), so that the server stops
+coverage reports). In WSL it also removes the Windows task that keeps WSL running, or prints the
+command when it can't. Then delete the agent in Woodpecker (*Settings → Agents*), so that the server stops
 listing it.
 
 The script leaves these in place, because other things on the machine may use them. Remove them by
@@ -116,8 +118,14 @@ hand if you want the machine back as it was:
 
 The agent runs with Woodpecker's local backend: pipeline steps run directly on the machine, as the
 agent user, without root rights and without Docker. `setup-linux-agent.sh` does everything on the
-machine, and runs the agent as the systemd service `woodpecker-agent-wsl.service` (with `--systemd`).
-The name is historical; it differs from `woodpecker-agent.service` on purpose.
+machine, and runs the agent as the systemd service `woodpecker-agent-wsl.service`, which restarts
+it whenever it exits and keeps its log in the journal. The name is historical; it differs from
+`woodpecker-agent.service` on purpose.
+
+The token is stored as plain data in `~/woodpecker-agent/agent-token`, readable only by the agent
+user. The agent reads the file itself and keeps the token out of the pipeline steps' environment.
+The steps still run as the same user, so they could read the file: only let pipelines run code you
+trust.
 
 Don't install the Woodpecker `.deb` package. Its `woodpecker-agent.service` runs as the user
 `woodpecker`, without the compiler pins, `VCPKG_ROOT` and the caches that `run-agent.sh` sets up.
@@ -128,9 +136,11 @@ script checks this and says what to do.
 
 ### WSL
 
-WSL stops a distribution once no process runs in it. That is why the scheduled task the script
-prints starts the distribution at logon and keeps it running with a process that only waits, which
-keeps the agent service alive.
+WSL stops a distribution once no process runs in it, and systemd services don't count. That is
+why the scheduled task starts the distribution at logon and keeps it running with a hidden process
+that only waits, which keeps the agent service alive.
 
-Optional: limit the WSL VM in `%UserProfile%\.wslconfig`, so that Windows and Linux pipelines can
-run side by side (`[wsl2]`, `memory=12GB`, `processors=8`).
+Optional: limit the WSL VM in `%UserProfile%\.wslconfig` (`[wsl2]`, `memory=12GB`,
+`processors=8`), so that Windows and Linux pipelines can run side by side. That limit, not
+`--priority`, keeps builds in WSL from slowing down Windows programs such as games: `--priority`
+only ranks the agent among the processes inside the VM.

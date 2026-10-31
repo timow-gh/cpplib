@@ -12,14 +12,12 @@ usage() {
 Usage: $(basename "$0") <command> [--yes]
 
   start      start the agent
-  stop       stop the agent; a running pipeline is aborted
-  restart    stop and start, e.g. after a rerun of setup-linux-agent.sh
+  stop       stop the agent until the next start or boot; a running pipeline is aborted
+  restart    stop and start, e.g. after changing run-agent.sh
   status     state of $SYSTEMD_UNIT and its last log lines
   log        follow the agent's log (Ctrl+C ends it)
   set-token  replace the stored agent token, then restart the agent
   uninstall  remove $SYSTEMD_UNIT and $AGENT_DIR; asks first (--yes skips that)
-
-start, stop, restart, status and log need the systemd service (setup with --systemd).
 EOF
 }
 
@@ -28,33 +26,33 @@ has_unit() {
 }
 
 require_unit() {
-    has_unit || fail "$SYSTEMD_UNIT is not installed: the agent was set up without --systemd, so start and" \
-        "stop $AGENT_DIR/run-agent.sh by hand, or rerun setup-linux-agent.sh with --systemd."
+    has_unit || fail "$SYSTEMD_UNIT is not installed; set the agent up with setup-linux-agent.sh"
 }
 
 set_token() {
     [[ -d $AGENT_DIR ]] || fail "$AGENT_DIR does not exist; set the agent up with setup-linux-agent.sh"
-    save_agent_token
+    local token
+    token=$(read_agent_token)
+    save_agent_token "$token"
     # The registration belongs to the old token.
     rm -f "$AGENT_CONFIG_FILE"
     if has_unit; then
         info "Restarting $SYSTEMD_UNIT (sudo)"
         sudo systemctl restart "$SYSTEMD_UNIT"
-    else
-        printf -- '- Restart the agent (run-agent.sh) so that it uses the new token.\n'
     fi
     printf -- '- If the old token belonged to another agent entry in Woodpecker, delete that entry under Settings -> Agents.\n'
 }
 
-# The task that starts WSL at logon was registered by hand in Windows; WSL's interop can remove it.
+# The task that keeps WSL running was registered in Windows by setup; WSL's interop can remove it.
 remove_wsl_task() {
-    local task
+    local task script
     task=$(wsl_task_name)
-    if command -v powershell.exe > /dev/null &&
-        powershell.exe -NoProfile -Command "Unregister-ScheduledTask -TaskName '$task' -Confirm:\$false" 2> /dev/null; then
+    script="Stop-ScheduledTask -TaskName '$task' -ErrorAction SilentlyContinue
+Unregister-ScheduledTask -TaskName '$task' -Confirm:\$false"
+    if run_windows_powershell "$script" 2> /dev/null; then
         info "Removed the Windows task '$task'"
     else
-        printf -- "- In a Windows PowerShell, remove the task that starts WSL:\n  Unregister-ScheduledTask -TaskName '%s' -Confirm:\$false\n" "$task"
+        printf -- "- In a Windows PowerShell, remove the task that keeps WSL running:\n  Unregister-ScheduledTask -TaskName '%s' -Confirm:\$false\n" "$task"
     fi
 }
 
@@ -90,6 +88,11 @@ uninstall() {
 main() {
     local command=${1:-} assume_yes=0
     [[ ${2:-} == --yes ]] && assume_yes=1
+    if [[ $command == -h || $command == --help ]]; then
+        usage
+        return
+    fi
+    require_agent_user
     case $command in
         start | stop | restart)
             require_unit
@@ -106,7 +109,6 @@ main() {
             ;;
         set-token) set_token ;;
         uninstall) uninstall "$assume_yes" ;;
-        -h | --help) usage ;;
         *)
             usage >&2
             fail "unknown command: ${command:-<none>}"

@@ -29,12 +29,14 @@ Usage: $(basename "$0") --agent-version <x.y.z> [--server <host:port>] [options]
                             (default $DEFAULT_VCPKG_DIR); pass it on every run
   --hostname NAME           agent name shown in Woodpecker (default linux-ubuntu)
   --max-workflows N         workflows the agent runs at once (default 1)
+  --priority PRIORITY       CPU and I/O priority of the agent and its builds: normal (default),
+                            below-normal or idle (only otherwise unused CPU time)
   --forgejo-url URL         only if CI_FORGE_URL is not reachable from this machine
-  --systemd                 run the agent as the systemd service $SYSTEMD_UNIT
   --force                   regenerate an existing run-agent.sh
 
+The agent runs as the systemd service $SYSTEMD_UNIT, which restarts it whenever it exits.
 Register the agent first (Woodpecker UI: Settings -> Agents -> Add agent). The script asks for
-its token, or reads it from WOODPECKER_AGENT_SECRET, unless $AGENT_ENV_FILE exists.
+its token, or reads it from WOODPECKER_AGENT_SECRET, unless $AGENT_TOKEN_FILE exists.
 manage-linux-agent.sh starts, stops, shows and removes the agent afterwards.
 EOF
 }
@@ -46,8 +48,8 @@ parse_arguments() {
     AGENT_HOSTNAME=linux-ubuntu
     VCPKG_DIR=$DEFAULT_VCPKG_DIR
     MAX_WORKFLOWS=1
+    PRIORITY=normal
     FORGEJO_URL=''
-    USE_SYSTEMD=0
     FORCE=0
     while (($# > 0)); do
         case $1 in
@@ -57,8 +59,8 @@ parse_arguments() {
             --vcpkg-dir) VCPKG_DIR=${2:?--vcpkg-dir needs a value}; shift 2 ;;
             --hostname) AGENT_HOSTNAME=${2:?--hostname needs a value}; shift 2 ;;
             --max-workflows) MAX_WORKFLOWS=${2:?--max-workflows needs a value}; shift 2 ;;
+            --priority) PRIORITY=${2:?--priority needs a value}; shift 2 ;;
             --forgejo-url) FORGEJO_URL=${2:?--forgejo-url needs a value}; shift 2 ;;
-            --systemd) USE_SYSTEMD=1; shift ;;
             --force) FORCE=1; shift ;;
             -h | --help) usage; exit 0 ;;
             *) usage >&2; fail "unknown argument: $1" ;;
@@ -66,6 +68,7 @@ parse_arguments() {
     done
     [[ -n $AGENT_VERSION ]] || { usage >&2; fail '--agent-version is required'; }
     [[ $MAX_WORKFLOWS =~ ^[1-9][0-9]*$ ]] || fail "--max-workflows must be a positive number"
+    [[ $PRIORITY =~ ^(normal|below-normal|idle)$ ]] || fail "--priority must be normal, below-normal or idle"
     # The release tags carry a leading v, the version printed in the Woodpecker UI does not.
     AGENT_VERSION=${AGENT_VERSION#v}
     # run-agent.sh starts in another directory, so a relative path would point somewhere else there.
@@ -77,7 +80,7 @@ parse_arguments() {
 }
 
 check_system() {
-    ((EUID != 0)) || fail 'run this as the agent user, not as root; it uses sudo where needed'
+    require_agent_user
     # shellcheck source=/dev/null
     . /etc/os-release
     if [[ ${ID:-} != ubuntu ]] || ! dpkg --compare-versions "${VERSION_ID:-0}" ge 24.04; then
@@ -90,12 +93,13 @@ check_system() {
         aarch64) ARCH=arm64 ;;
         *) fail "unsupported architecture $(uname -m)" ;;
     esac
-    if ((USE_SYSTEMD)) && [[ ! -d /run/systemd/system ]]; then
+    # systemd restarts the agent, sets its priority and rotates its log; there is no other mode.
+    if [[ ! -d /run/systemd/system ]]; then
         if is_wsl; then
             fail 'systemd is not running in this distribution. Add "[boot]" and "systemd=true" to' \
                 '/etc/wsl.conf, run "wsl --shutdown" in Windows, then start the distribution again.'
         fi
-        fail 'systemd is not running on this machine, so --systemd cannot install the service'
+        fail 'systemd is not running on this machine; the agent runs as a systemd service'
     fi
 }
 
@@ -190,12 +194,22 @@ install_agent_binaries() {
     install_binary "$WORK_DIR/plugin-git/$plugin_asset" "$AGENT_DIR/plugin-git"
 }
 
-write_agent_env() {
-    if [[ -f $AGENT_ENV_FILE ]]; then
-        info "Keeping the agent token in $AGENT_ENV_FILE (manage-linux-agent.sh set-token replaces it)"
+# Earlier versions kept the token as a line of shell code in agent.env, which run-agent.sh
+# sourced. Its value is taken over as text, never sourced; write_run_agent_script deletes the file
+# once a run-agent.sh exists that no longer reads it.
+write_agent_token() {
+    local legacy_env_file="$AGENT_DIR/agent.env" token
+    if [[ -f $AGENT_TOKEN_FILE ]]; then
+        info "Keeping the agent token in $AGENT_TOKEN_FILE (manage-linux-agent.sh set-token replaces it)"
         return
     fi
-    save_agent_token
+    if [[ -f $legacy_env_file ]]; then
+        info "Taking over the agent token from $legacy_env_file"
+        token=$(clean_agent_token "$(sed -n 's/^WOODPECKER_AGENT_SECRET=//p' "$legacy_env_file")")
+    else
+        token=$(read_agent_token)
+    fi
+    save_agent_token "$token"
 }
 
 write_run_agent_script() {
@@ -239,9 +253,9 @@ EOF
         fi
         cat <<'EOF'
 
-set -a
-. "$agent_dir/agent.env"
-set +a
+# The agent reads the token from the file and unsets this variable, so the pipeline steps,
+# which inherit the agent's environment, never see the token.
+export WOODPECKER_AGENT_SECRET_FILE="$agent_dir/agent-token"
 export WOODPECKER_AGENT_CONFIG_FILE="$agent_dir/agent.conf"
 EOF
         printf 'export WOODPECKER_SERVER=%q\n' "$SERVER"
@@ -253,6 +267,7 @@ EOF
     } > "$script.new"
     chmod 755 "$script.new"
     mv -f "$script.new" "$script"
+    rm -f "$AGENT_DIR/agent.env"
 }
 
 # Newer kernels (WSL's among them) map memory with more ASLR entropy than ThreadSanitizer supports
@@ -267,19 +282,32 @@ limit_aslr_entropy() {
     fi
 }
 
+# Unit lines for --priority. Every process the agent starts, the builds among them, inherits them.
+priority_directives() {
+    case $PRIORITY in
+        below-normal) printf 'Nice=10\nIOSchedulingClass=best-effort\nIOSchedulingPriority=7\n' ;;
+        idle) printf 'Nice=19\nCPUSchedulingPolicy=idle\nIOSchedulingClass=idle\n' ;;
+        normal) ;;
+    esac
+}
+
 install_systemd_unit() {
-    info "Installing and (re)starting $SYSTEMD_UNIT (sudo)"
+    info "Installing and (re)starting $SYSTEMD_UNIT, priority $PRIORITY (sudo)"
     sudo tee "/etc/systemd/system/$SYSTEMD_UNIT" > /dev/null <<EOF
 [Unit]
 Description=Woodpecker agent (local backend, see tools/woodpecker-agent/linux.md)
 Wants=network-online.target
 After=network-online.target
+# The default gives up after 5 starts in 10 s; an agent that is down takes no jobs.
+StartLimitIntervalSec=0
 
 [Service]
 User=$(id -un)
 ExecStart=$AGENT_DIR/run-agent.sh
-Restart=on-failure
+# Also after a clean exit, e.g. when the server closed the connection.
+Restart=always
 RestartSec=10
+$(priority_directives)
 
 [Install]
 WantedBy=multi-user.target
@@ -306,41 +334,33 @@ EOF
     fi
 }
 
-# WSL stops a distribution once no process runs in it. The scheduled task starts the
-# distribution at logon and keeps it running: with --systemd a process that only waits, which
-# keeps the agent service alive, otherwise the agent itself.
-print_wsl_task_steps() {
-    local distro=${WSL_DISTRO_NAME:-Ubuntu-24.04} wsl_arguments
-    if ((USE_SYSTEMD)); then
-        wsl_arguments="-d $distro --exec sleep infinity"
-    else
-        wsl_arguments="-d $distro -- bash -lc $AGENT_DIR/run-agent.sh"
-    fi
-    cat <<EOF
-- In a Windows PowerShell, register the task that starts WSL and the agent at logon:
-
-  Register-ScheduledTask -Force -TaskName '$(wsl_task_name)' \`
-      -Action (New-ScheduledTaskAction -Execute wsl.exe -Argument '$wsl_arguments') \`
-      -Trigger (New-ScheduledTaskTrigger -AtLogOn -User \$env:USERNAME) \`
-      -Settings (New-ScheduledTaskSettingsSet -ExecutionTimeLimit 0 -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries)
-
+# WSL stops a distribution once no wsl.exe process runs in it; systemd services don't count. The
+# task keeps a process that only waits running from logon on. conhost --headless gives it no
+# window, which could be closed by accident and so stop the agent.
+register_wsl_task() {
+    local task distro=${WSL_DISTRO_NAME:-Ubuntu-24.04} script
+    task=$(wsl_task_name)
+    script=$(cat <<EOF
+\$action = New-ScheduledTaskAction -Execute 'conhost.exe' -Argument '--headless wsl.exe -d $distro --exec sleep infinity'
+\$trigger = New-ScheduledTaskTrigger -AtLogOn -User "\$env:USERDOMAIN\\\$env:USERNAME"
+\$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+Register-ScheduledTask -Force -TaskName '$task' -Action \$action -Trigger \$trigger -Settings \$settings | Out-Null
+Start-ScheduledTask -TaskName '$task'
 EOF
+)
+    info "Registering the Windows task '$task', which keeps WSL running from logon on"
+    if ! run_windows_powershell "$script"; then
+        printf '\n[warning] Could not register the task through WSL interop. In a Windows PowerShell, run:\n\n%s\n' "$script"
+    fi
 }
 
 print_next_steps() {
     info 'Done. Next steps:'
+    printf -- '- Status, log, stop, start, removal: bash %s/manage-linux-agent.sh <command> (--help lists them)\n' \
+        "$(dirname "${BASH_SOURCE[0]}")"
     if is_wsl; then
-        print_wsl_task_steps
-    fi
-    if ((USE_SYSTEMD)); then
-        printf -- '- Status, log, stop, start, removal: bash %s/manage-linux-agent.sh <command> (--help lists them)\n' \
-            "$(dirname "${BASH_SOURCE[0]}")"
-    else
-        printf -- '- Start the agent by hand: %s\n' "$AGENT_DIR/run-agent.sh"
-        printf -- '  If an agent is already running, restart it so it loads the new binary and environment.\n'
-    fi
-    if is_wsl; then
-        printf -- '- Optional: limit the WSL VM in %%UserProfile%%\\.wslconfig ([wsl2] memory=12GB, processors=8).\n'
+        printf -- '- Optional: limit the WSL VM in %%UserProfile%%\\.wslconfig ([wsl2] memory=12GB, processors=8);\n'
+        printf -- '  that, not --priority, keeps the builds from slowing down Windows.\n'
     fi
     cat <<EOF
 - Check the agent: run the linux-agent-check pipeline manually in Woodpecker; every line should
@@ -355,15 +375,17 @@ main() {
     WORK_DIR=$(mktemp -d)
     trap 'rm -rf "$WORK_DIR"' EXIT
     mkdir -p "$AGENT_DIR"
+    # Asked first, so that the rest runs without the user.
+    write_agent_token
     install_packages
     pin_compilers
     install_vcpkg
     install_agent_binaries
-    write_agent_env
     write_run_agent_script
     limit_aslr_entropy
-    if ((USE_SYSTEMD)); then
-        install_systemd_unit
+    install_systemd_unit
+    if is_wsl; then
+        register_wsl_task
     fi
     warn_about_deb_package
     print_next_steps
