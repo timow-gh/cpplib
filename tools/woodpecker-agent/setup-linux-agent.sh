@@ -119,7 +119,7 @@ install_packages() {
     sudo apt-get update
     # plugin-git runs "git lfs fetch" in every clone step, whether the repository uses LFS or not.
     sudo apt-get install -y git git-lfs cmake ninja-build build-essential dpkg-dev pkg-config \
-        "gcc-$GCC_VERSION" "g++-$GCC_VERSION" lcov python3 curl jq zip unzip tar
+        "gcc-$GCC_VERSION" "g++-$GCC_VERSION" lcov ccache python3 curl jq zip unzip tar
     # Captured instead of piped into grep -q, whose early exit would fail the pipe (pipefail).
     local policy
     policy=$(apt-cache policy "clang-$CLANG_VERSION")
@@ -219,7 +219,7 @@ write_run_agent_script() {
         return
     fi
     info "Writing $script"
-    mkdir -p "$AGENT_DIR/cache/cpm" "$AGENT_DIR/cache/vcpkg" "$AGENT_DIR/coverage"
+    mkdir -p "$AGENT_DIR/cache/cpm" "$AGENT_DIR/cache/vcpkg" "$AGENT_DIR/cache/ccache" "$AGENT_DIR/coverage"
     {
         cat <<'EOF'
 #!/usr/bin/env bash
@@ -241,6 +241,10 @@ export CPM_SOURCE_CACHE="$agent_dir/cache/cpm"
 # The local backend points HOME at the workflow directory, which is deleted after every run, so
 # vcpkg's default binary cache below HOME would rebuild the dependencies every time.
 export VCPKG_DEFAULT_BINARY_CACHE="$agent_dir/cache/vcpkg"
+# For the same reason ccache's default directory below HOME would start empty in every run. The
+# CI scripts compile through ccache when it is installed and CCACHE_DIR is set.
+export CCACHE_DIR="$agent_dir/cache/ccache"
+export CCACHE_MAXSIZE=20G
 # Coverage reports of every run, kept by .woodpecker/scripts/linux-coverage.sh.
 export COVERAGE_REPORT_DIR="$agent_dir/coverage"
 # Lets the CI scripts name this file in their fix hints.
@@ -334,23 +338,10 @@ EOF
     fi
 }
 
-# WSL stops a distribution once no wsl.exe process runs in it; systemd services don't count. The
-# task keeps a process that only waits running from logon on. conhost --headless gives it no
-# window, which could be closed by accident and so stop the agent.
 register_wsl_task() {
-    local task distro=${WSL_DISTRO_NAME:-Ubuntu-24.04} script
-    task=$(wsl_task_name)
-    script=$(cat <<EOF
-\$action = New-ScheduledTaskAction -Execute 'conhost.exe' -Argument '--headless wsl.exe -d $distro --exec sleep infinity'
-\$trigger = New-ScheduledTaskTrigger -AtLogOn -User "\$env:USERDOMAIN\\\$env:USERNAME"
-\$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-Register-ScheduledTask -Force -TaskName '$task' -Action \$action -Trigger \$trigger -Settings \$settings | Out-Null
-Start-ScheduledTask -TaskName '$task'
-EOF
-)
-    info "Registering the Windows task '$task', which keeps WSL running from logon on"
-    if ! run_windows_powershell "$script"; then
-        printf '\n[warning] Could not register the task through WSL interop. In a Windows PowerShell, run:\n\n%s\n' "$script"
+    if ! run_wsl_task register; then
+        printf '\n[warning] Could not register the Windows task that keeps WSL running through WSL interop.\n'
+        printf '          In a Windows PowerShell, not elevated, run:\n\n%s\n' "$(wsl_task_command register)"
     fi
 }
 

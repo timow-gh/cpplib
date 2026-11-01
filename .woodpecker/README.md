@@ -19,6 +19,25 @@ remove one, see [windows.md](../tools/woodpecker-agent/windows.md) and
   a workflow file is an intended matrix variable such as `${PRESET_SUFFIX}`.
 - Bash scripts are called as `bash .woodpecker/scripts/x.sh`, so they need no executable bit.
 
+## Order on the agents
+
+Each agent runs one workflow at a time, so a pull request's workflows queue up. `depends_on` puts
+the quick ones first, which gives feedback on most checks early:
+
+| Agent | First | Then | Last |
+|---|---|---|---|
+| Windows | `commit-messages` | `windows-build` | `windows-package` |
+| Linux | `linux-build`, `linux-package` | `linux-sanitizers`, `linux-coverage` | `linux-static-analysis` (clang-tidy) |
+
+The dependencies only order the queue:
+
+- `optional: true`, because not every workflow runs for every event.
+- `status: [success, failure]` in each `when` entry, so a failed dependency doesn't skip the
+  workflows after it.
+- None crosses agents, which would leave one agent idle while it waits for the other.
+
+GitHub has no such order: there every job gets its own runner and all run at once.
+
 ## Forgejo and Woodpecker settings
 
 Forgejo shows one status per workflow and matrix entry, and there are no `*-summary` jobs like on

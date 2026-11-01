@@ -12,10 +12,16 @@ matrix:
     - shared
     - standalone
 
+# Order on the agent: see README.md#order-on-the-agents.
+depends_on:
+  - name: windows-build
+    optional: true
+
 when:
   # For pull requests, `branch` is the target branch.
   - event: pull_request
     branch: main
+    status: [success, failure]
 
 steps:
   - name: package-${DELIVERY_MODE}

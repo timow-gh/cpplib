@@ -41,9 +41,9 @@ bash /mnt/c/<path to this repository>/tools/woodpecker-agent/setup-linux-agent.s
 ```
 
 If it says systemd is not running, it also says what to add to `/etc/wsl.conf`. The script
-registers a Windows task that starts WSL and the agent at every logon, without a window; if WSL
-can't reach Windows, it prints the command to paste into a Windows PowerShell. Check the agent as
-above.
+registers a Windows task that starts WSL and the agent at every logon, without a window
+(`wsl-task.ps1`); if WSL can't reach Windows, it prints the one command that runs that script in a
+Windows PowerShell. Check the agent as above.
 
 ### Options
 
@@ -111,7 +111,7 @@ hand if you want the machine back as it was:
 | Left behind | Where | Remove with |
 |---|---|---|
 | vcpkg checkout | `--vcpkg-dir`, default `~/vcpkg` | delete the folder, if nothing else uses it |
-| Build tools | apt packages gcc-14, clang-20, cmake, ninja-build, lcov, git-lfs and others | `sudo apt remove <package>` |
+| Build tools | apt packages gcc-14, clang-20, cmake, ninja-build, lcov, ccache, git-lfs and others | `sudo apt remove <package>` |
 | ThreadSanitizer setting | `/etc/sysctl.d/60-tsan-mmap-rnd-bits.conf` (`vm.mmap_rnd_bits=28`) | delete the file, then reboot or `sudo sysctl -w vm.mmap_rnd_bits=<previous value>` |
 
 ## How it runs

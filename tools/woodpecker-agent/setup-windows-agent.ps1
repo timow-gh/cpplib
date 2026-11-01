@@ -128,6 +128,7 @@ function Install-Tools {
         @('Git.Git'),
         @('Kitware.CMake'),
         @('orhun.git-cliff'),
+        @('Ccache.Ccache'),
         @('Microsoft.VisualStudio.2022.BuildTools', '--override', '--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --wait')
     )
     foreach ($package in $packages) {
@@ -270,6 +271,10 @@ function Write-RunAgentScript {
 # the steps; every pipeline starts in a fresh workspace.
 `$env:VCPKG_DEFAULT_BINARY_CACHE = Join-Path `$agentDirectory 'cache\vcpkg'
 `$env:CPM_SOURCE_CACHE = Join-Path `$agentDirectory 'cache\cpm'
+# The CI scripts compile through ccache when it is installed and CCACHE_DIR is set. One cache
+# serves every repository's pipelines on this agent, hence more than ccache's default of 5 GB.
+`$env:CCACHE_DIR = Join-Path `$agentDirectory 'cache\ccache'
+`$env:CCACHE_MAXSIZE = '20G'
 # Lets the CI scripts name this file in their fix hints.
 `$env:WOODPECKER_AGENT_SCRIPT = `$PSCommandPath
 $forgejo

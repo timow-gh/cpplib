@@ -32,20 +32,24 @@ is_wsl() {
     grep -qi microsoft /proc/version
 }
 
-# The Windows task that keeps the distribution running after logon; setup registers it.
-wsl_task_name() {
-    printf 'Woodpecker agent (WSL %s)' "${WSL_DISTRO_NAME:-Ubuntu-24.04}"
+# wsl-task.ps1 registers and removes the Windows task that keeps the distribution running. It is
+# a file of the checkout, which Windows can read, so that the command printed when WSL interop
+# fails runs the very same script.
+wsl_task_script() {
+    wslpath -w "$(realpath "$(dirname "${BASH_SOURCE[0]}")/wsl-task.ps1")"
 }
 
-# Runs a PowerShell script in Windows through WSL interop. The script travels base64-encoded
-# (UTF-16LE, as -EncodedCommand expects), so nothing in it needs quoting for bash or Windows.
-# Without a console, PowerShell would print its progress bars as CLIXML.
-run_windows_powershell() {
-    local script=$1 encoded
+# The Windows PowerShell command that runs wsl-task.ps1 with the command $1 (register, remove).
+wsl_task_command() {
+    printf "powershell -ExecutionPolicy Bypass -File '%s' %s -Distribution %s" \
+        "$(wsl_task_script)" "$1" "${WSL_DISTRO_NAME:-Ubuntu-24.04}"
+}
+
+# Runs wsl-task.ps1 with the command $1 in Windows through WSL interop.
+run_wsl_task() {
     command -v powershell.exe > /dev/null || return 1
-    encoded=$(printf "\$ErrorActionPreference = 'Stop'\n\$ProgressPreference = 'SilentlyContinue'\n%s" "$script" |
-        iconv -t UTF-16LE | base64 -w 0)
-    powershell.exe -NoProfile -NonInteractive -EncodedCommand "$encoded"
+    powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(wsl_task_script)" "$1" \
+        -Distribution "${WSL_DISTRO_NAME:-Ubuntu-24.04}"
 }
 
 # Drops surrounding whitespace (a pasted line end) and refuses anything outside the alphabet of

@@ -16,15 +16,23 @@ matrix:
     - PRESET_SUFFIX: release-standalone
       MAIN_ONLY: "true"
 
+# Order on the agent: see README.md#order-on-the-agents.
+depends_on:
+  - name: commit-messages
+    optional: true
+
 when:
   - event: push
     branch: main
+    status: [success, failure]
   # For pull requests, `branch` is the target branch.
   - event: pull_request
     branch: main
+    status: [success, failure]
   - event: push
     branch: develop-**
     evaluate: '"${MAIN_ONLY}" == "false"'
+    status: [success, failure]
 
 steps:
   - name: build-msvc-${PRESET_SUFFIX}

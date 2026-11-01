@@ -24,7 +24,7 @@ $script:AgentFiles = @(
     'woodpecker-agent.exe', 'woodpecker-agent.exe.old*', 'plugin-git.exe', 'plugin-git.exe.old*',
     'run-agent.ps1', $script:AgentSecretFile, $script:AgentConfigFile, $script:AgentLogFile, "$($script:AgentLogFile).1"
 )
-$script:AgentCacheDirectories = @('cache\cpm', 'cache\vcpkg')
+$script:AgentCacheDirectories = @('cache\cpm', 'cache\vcpkg', 'cache\ccache')
 # Task Scheduler priority per -Priority. The agent and every build it starts run in the matching
 # priority class: 5 normal, 7 below normal, 9 idle (only otherwise unused CPU time).
 $script:TaskPriority = @{ Normal = 5; BelowNormal = 7; Idle = 9 }

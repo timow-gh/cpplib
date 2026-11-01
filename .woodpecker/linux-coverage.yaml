@@ -8,12 +8,21 @@ labels:
   os: linux
   env: linux
 
+# Order on the agent: see README.md#order-on-the-agents.
+depends_on:
+  - name: linux-build
+    optional: true
+  - name: linux-package
+    optional: true
+
 when:
   - event: push
     branch: main
+    status: [success, failure]
   # For pull requests, `branch` is the target branch.
   - event: pull_request
     branch: main
+    status: [success, failure]
 
 steps:
   - name: coverage

@@ -43,19 +43,6 @@ set_token() {
     printf -- '- If the old token belonged to another agent entry in Woodpecker, delete that entry under Settings -> Agents.\n'
 }
 
-# The task that keeps WSL running was registered in Windows by setup; WSL's interop can remove it.
-remove_wsl_task() {
-    local task script
-    task=$(wsl_task_name)
-    script="Stop-ScheduledTask -TaskName '$task' -ErrorAction SilentlyContinue
-Unregister-ScheduledTask -TaskName '$task' -Confirm:\$false"
-    if run_windows_powershell "$script" 2> /dev/null; then
-        info "Removed the Windows task '$task'"
-    else
-        printf -- "- In a Windows PowerShell, remove the task that keeps WSL running:\n  Unregister-ScheduledTask -TaskName '%s' -Confirm:\$false\n" "$task"
-    fi
-}
-
 uninstall() {
     local assume_yes=$1 answer
     if [[ $assume_yes != 1 ]]; then
@@ -74,9 +61,13 @@ uninstall() {
     fi
     info "Removing $AGENT_DIR"
     rm -rf -- "$AGENT_DIR"
-    info 'Done. Left to do:'
+    local wsl_task_left=0
     if is_wsl; then
-        remove_wsl_task
+        run_wsl_task remove || wsl_task_left=1
+    fi
+    info 'Done. Left to do:'
+    if ((wsl_task_left)); then
+        printf -- '- In a Windows PowerShell, remove the task that keeps WSL running:\n  %s\n' "$(wsl_task_command remove)"
     fi
     printf -- '- Delete the agent in Woodpecker (Settings -> Agents).\n'
     if [[ -n $vcpkg_root ]]; then

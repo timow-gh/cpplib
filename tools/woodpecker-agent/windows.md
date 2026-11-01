@@ -97,7 +97,7 @@ hand if you want the machine back as it was:
 | Left behind | Where | Remove with |
 |---|---|---|
 | vcpkg checkout | `-VcpkgRoot`, default `~\vcpkg` | delete the folder, if nothing else uses it |
-| Build tools, with `-InstallTools` | winget packages `Git.Git`, `Kitware.CMake`, `orhun.git-cliff`, Visual Studio Build Tools; Chocolatey `wixtoolset` | `winget uninstall --id <id>`, `choco uninstall wixtoolset` |
+| Build tools, with `-InstallTools` | winget packages `Git.Git`, `Kitware.CMake`, `orhun.git-cliff`, `Ccache.Ccache`, Visual Studio Build Tools; Chocolatey `wixtoolset` | `winget uninstall --id <id>`, `choco uninstall wixtoolset` |
 | Execution policy | `RemoteSigned` for the current user, only set if scripts were blocked | `Set-ExecutionPolicy -Scope CurrentUser Undefined` |
 
 ## How it runs
