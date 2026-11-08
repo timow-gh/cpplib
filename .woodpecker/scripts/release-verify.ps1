@@ -5,8 +5,8 @@
 # uninstalled again, and the script refuses to run while the product is installed for real,
 # because installing the MSI would upgrade that installation and the cleanup would remove it.
 #
-# -ZipOnly skips the MSI, which needs an elevated agent; windows-package.yaml uses it to check
-# the packages of pull requests.
+# -ZipOnly skips the MSI, which needs an elevated agent; windows-package-shared.yaml and
+# windows-package-standalone.yaml use it to check the packages of pull requests.
 param(
     [Parameter(Mandatory)]
     [ValidateSet('shared', 'standalone')]

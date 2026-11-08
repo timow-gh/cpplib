@@ -1,8 +1,12 @@
 # Counterpart of .github/workflows/ubuntu-coverage.yml. The coverage step needs no token and
 # prints the report, for pull requests compared with main; the report is kept on the agent host.
-# Only a push to main uploads it to the Forgejo package registry, with the secret
-# forgejo_package_token; pull request pipelines run unreviewed code and get no secret. There is no
-# pull request comment, which would need a token in the pull request pipeline.
+#
+# For a pull request, comment-coverage posts the report as a new pull request comment with the
+# run's files attached, one comment per run. It uses the secret forgejo_comment_token of the CI bot
+# account (write:issue only), which the pull request's code can read; see README.md#secrets.
+#
+# A push to main runs only this workflow: publish-coverage uploads the report to the Forgejo package
+# registry as the baseline pull requests compare with, using the secret forgejo_package_token.
 
 labels:
   os: linux
@@ -10,9 +14,19 @@ labels:
 
 # Order on the agent: see README.md#order-on-the-agents.
 depends_on:
-  - name: linux-build
+  - name: linux-gcc-debug
     optional: true
-  - name: linux-package
+  - name: linux-gcc-release
+    optional: true
+  - name: linux-clang-debug
+    optional: true
+  - name: linux-clang-release
+    optional: true
+  - name: linux-gcc-release-standalone
+    optional: true
+  - name: linux-package-shared
+    optional: true
+  - name: linux-package-standalone
     optional: true
 
 when:
@@ -29,6 +43,16 @@ steps:
     image: bash
     commands:
       - bash .woodpecker/scripts/linux-coverage.sh
+
+  - name: comment-coverage
+    image: bash
+    environment:
+      FORGEJO_COMMENT_TOKEN:
+        from_secret: forgejo_comment_token
+    commands:
+      - bash .woodpecker/scripts/coverage-comment.sh
+    when:
+      - event: pull_request
 
   - name: publish-coverage
     image: bash

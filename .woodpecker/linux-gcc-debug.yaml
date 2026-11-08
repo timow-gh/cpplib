@@ -1,0 +1,25 @@
+# Counterpart of the gcc debug job of .github/workflows/ubuntu-build.yml.
+# Runs for pull requests and, as on GitHub, for pushes to develop-* branches; the only Linux
+# build that does.
+# A push to main builds nothing; see README.md#what-runs-when.
+# No secrets: pull request pipelines run code from the pull request branch.
+#
+# One workflow per job instead of a matrix, so the commit status is named after the job
+# (ci/woodpecker/pr/linux-gcc-debug); a matrix entry would only get a number.
+
+labels:
+  os: linux
+  env: linux
+
+when:
+  # For pull requests, `branch` is the target branch.
+  - event: pull_request
+    branch: main
+  - event: push
+    branch: develop-**
+
+steps:
+  - name: build-gcc-debug
+    image: bash
+    commands:
+      - bash .woodpecker/scripts/linux-build.sh gcc-debug

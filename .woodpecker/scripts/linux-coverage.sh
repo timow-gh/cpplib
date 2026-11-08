@@ -4,8 +4,8 @@
 # Runs without a token, also for pull requests. The outputs land in out/coverage/
 # (coverage.json, coverage-summary.md, coverage-html.tar.gz) and, if COVERAGE_REPORT_DIR is set,
 # in <COVERAGE_REPORT_DIR>/<pr-N|branch>/<commit>/ on the agent host. coverage-publish.sh uploads
-# them for pushes to main. A pull request is compared with the last upload of main, which it
-# downloads anonymously.
+# them for pushes to main; coverage-comment.sh posts them on the pull request for pull requests. A
+# pull request is compared with the last upload of main, which it downloads anonymously.
 
 . "$(dirname "${BASH_SOURCE[0]}")/ci-common.sh"
 

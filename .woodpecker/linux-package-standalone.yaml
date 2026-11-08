@@ -1,0 +1,26 @@
+# Packaging check for pull requests, which GitHub does not have: builds the standalone Linux package
+# the way release-linux.yaml does and checks it, so a packaging mistake shows up in the pull
+# request instead of at the next release. Nothing is installed on the agent; see linux-verify.sh.
+#
+# One workflow per job instead of a matrix, so the commit status is named after the job
+# (ci/woodpecker/pr/linux-package-standalone); a matrix entry would only get a number.
+
+labels:
+  os: linux
+  env: linux
+
+when:
+  # For pull requests, `branch` is the target branch.
+  - event: pull_request
+    branch: main
+
+steps:
+  - name: package-standalone
+    image: bash
+    commands:
+      - bash .woodpecker/scripts/linux-package.sh standalone
+
+  - name: verify-standalone
+    image: bash
+    commands:
+      - bash .woodpecker/scripts/linux-verify.sh standalone

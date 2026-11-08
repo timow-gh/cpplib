@@ -11,12 +11,27 @@ agent whose labels match, so they can run on one computer or on two. To set up, 
 remove one, see [windows.md](../tools/woodpecker-agent/windows.md) and
 [linux.md](../tools/woodpecker-agent/linux.md).
 
+## What runs when
+
+| Event | Workflows |
+|---|---|
+| Pull request to `main` | every build, package, sanitizer and analysis workflow, `linux-coverage` (with a coverage comment on the pull request), `commit-messages` |
+| Push to a `develop-*` branch | `linux-gcc-debug`, `windows-msvc-debug` |
+| Push to `main` | `linux-coverage` only: it uploads the coverage baseline that pull requests compare with |
+| `v*` tag | `release`, `release-linux`, `release-finalize` |
+| Manual | the release workflows (without publishing), `linux-agent-check`, `windows-agent-check` |
+
+Unlike GitHub, a push to `main` does not rebuild, because `main` gets the tree its pull request
+already tested. That holds only if Forgejo blocks merging an outdated pull request (see
+[Forgejo and Woodpecker settings](#forgejo-and-woodpecker-settings)): a pull request pipeline tests
+the head of the pull request branch, not its merge with `main`.
+
 ## Rules for all workflow files
 
 - All logic lives in `scripts/`: `*.ps1` for the Windows agent, `*.sh` for the Linux agent.
   Woodpecker substitutes variables in the raw text of a workflow file, comments included, before
-  the shell sees it. That breaks PowerShell's `$env:X` and bash variables alike, so the only `$` in
-  a workflow file is an intended matrix variable such as `${PRESET_SUFFIX}`.
+  the shell sees it. That breaks PowerShell's `$env:X` and bash variables alike, so no workflow
+  file contains a `$`.
 - Bash scripts are called as `bash .woodpecker/scripts/x.sh`, so they need no executable bit.
 
 ## Order on the agents
@@ -26,8 +41,8 @@ the quick ones first, which gives feedback on most checks early:
 
 | Agent | First | Then | Last |
 |---|---|---|---|
-| Windows | `commit-messages` | `windows-build` | `windows-package` |
-| Linux | `linux-build`, `linux-package` | `linux-sanitizers`, `linux-coverage` | `linux-static-analysis` (clang-tidy) |
+| Windows | `commit-messages` | `windows-msvc-*` builds | `windows-package-*` |
+| Linux | `linux-{gcc,clang}-{debug,release}`, `linux-gcc-release-standalone`, `linux-package-*` | `linux-clang-debug-{asan,tsan,ubsan}`, `linux-coverage` | `linux-static-analysis` (clang-tidy) |
 
 The dependencies only order the queue:
 
@@ -40,8 +55,37 @@ GitHub has no such order: there every job gets its own runner and all run at onc
 
 ## Forgejo and Woodpecker settings
 
-Forgejo shows one status per workflow and matrix entry, and there are no `*-summary` jobs like on
-GitHub. Set up the branch protection rules with these names.
+Forgejo shows one status per workflow, and there are no `*-summary` jobs like on GitHub. Woodpecker
+names them `ci/woodpecker/<event>/<workflow file name>`. A matrix entry would only get its number
+appended (`/1`, `/2`), so every job has its own workflow file instead of a matrix. Set up the
+branch protection rule of `main` with:
+
+- *Block merge if pull request is outdated*, so that `main` only gets trees a pull request tested.
+- The required status checks, one pattern per line:
+
+  ```
+  ci/woodpecker/pr/commit-messages
+  ci/woodpecker/pr/linux-gcc-debug
+  ci/woodpecker/pr/linux-gcc-release
+  ci/woodpecker/pr/linux-clang-debug
+  ci/woodpecker/pr/linux-clang-release
+  ci/woodpecker/pr/linux-gcc-release-standalone
+  ci/woodpecker/pr/linux-package-shared
+  ci/woodpecker/pr/linux-package-standalone
+  ci/woodpecker/pr/linux-clang-debug-asan
+  ci/woodpecker/pr/linux-clang-debug-tsan
+  ci/woodpecker/pr/linux-clang-debug-ubsan
+  ci/woodpecker/pr/linux-static-analysis
+  ci/woodpecker/pr/windows-msvc-debug
+  ci/woodpecker/pr/windows-msvc-release
+  ci/woodpecker/pr/windows-msvc-release-standalone
+  ci/woodpecker/pr/windows-package-shared
+  ci/woodpecker/pr/windows-package-standalone
+  ```
+
+  `ci/woodpecker/pr/linux-coverage` is left out: coverage is informational, and a refused comment
+  attachment would otherwise block every merge. Forgejo only accepts patterns that match statuses
+  it has seen on recent commits, so add a new name after its first pipeline has run.
 
 Keep *Settings → Project → Require approval for* at least at pull requests from forks. A pull
 request pipeline runs the code of the pull request branch on the agent machine, as the agent's
@@ -57,15 +101,30 @@ references a secret that does not exist.
 | `forgejo_token` | Forgejo access token with `write:repository` | tag, manual |
 | `allow_product_identity_change` | `false`; `true` only for a release that deliberately becomes a new product | tag, manual |
 | `forgejo_package_token` | Forgejo access token with **only** `write:package` | push |
+| `forgejo_comment_token` | Token of the CI bot account with **only** `write:issue` | pull_request |
 
-No secret is available for `pull_request`: the pull request's code could read it.
-`forgejo_package_token` is the exception for `push`, where the coverage of `main` is uploaded.
+`forgejo_package_token` is available for `push`, where the coverage of `main` is uploaded.
 Woodpecker filters secrets by event, not by branch, so a push to a `develop-*` branch, which has not
 been reviewed yet either, could request it too. That is why it can only write packages, and why it
 is not the release token.
 
-Pull requests compare their coverage with the last upload of `main`, which they download without
-login. The owner of the repository must therefore be public in Forgejo.
+`forgejo_comment_token` is the only secret of `pull_request` pipelines. They run the pull request's
+code, which can read it, so it belongs to a dedicated bot account, not to a person, and can only
+write issues and comments. The bot needs read access to the repository. A leaked token lets
+someone comment as the bot. Keep *Require approval for* at least at pull requests from forks, and
+before approving a fork's pipeline, check that its changes don't send the token anywhere.
+
+### Coverage
+
+Every coverage run of a pull request adds a comment to the pull request: the report, compared with
+the last upload of `main`, plus the run's `coverage.json`, `coverage-summary.md` and
+`coverage-html.tar.gz` attached to that comment. Each push gets its own comment, and older comments
+stay, so every run's numbers and files remain downloadable. The comments start with the marker
+`<!-- coverage-report -->`. Forgejo must accept `.md`, `.json` and `.gz` attachments of that
+size (`[attachment]` in `app.ini`, `ALLOWED_TYPES` and `MAX_SIZE`).
+
+Pull requests download the baseline of `main` without login. The owner of the repository must
+therefore be public in Forgejo.
 
 ## Troubleshooting
 

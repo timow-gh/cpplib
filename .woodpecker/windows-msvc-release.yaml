@@ -1,0 +1,28 @@
+# Counterpart of the release job of .github/workflows/windows-build.yml.
+# Runs for pull requests only.
+# A push to main builds nothing; see README.md#what-runs-when.
+# No secrets: pull request pipelines run code from the pull request branch.
+#
+# One workflow per job instead of a matrix, so the commit status is named after the job
+# (ci/woodpecker/pr/windows-msvc-release); a matrix entry would only get a number.
+
+labels:
+  os: windows
+  env: native
+
+# Order on the agent: see README.md#order-on-the-agents.
+depends_on:
+  - name: commit-messages
+    optional: true
+
+when:
+  # For pull requests, `branch` is the target branch.
+  - event: pull_request
+    branch: main
+    status: [success, failure]
+
+steps:
+  - name: build-msvc-release
+    image: powershell
+    commands:
+      - .\.woodpecker\scripts\windows-build.ps1 -PresetSuffix release

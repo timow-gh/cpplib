@@ -440,6 +440,15 @@ check_forgejo_package_token() {
     check_passed 'FORGEJO_PACKAGE_TOKEN is set'
 }
 
+check_forgejo_comment_token() {
+    if [[ -z ${FORGEJO_COMMENT_TOKEN:-} ]]; then
+        check_failed 'FORGEJO_COMMENT_TOKEN is empty' '$FORGEJO_COMMENT_TOKEN (Woodpecker secret forgejo_comment_token)' \
+            'create a token of the CI bot account and add it in Woodpecker as the repository secret forgejo_comment_token; its scope and events are listed in .woodpecker/README.md#secrets'
+        return
+    fi
+    check_passed 'FORGEJO_COMMENT_TOKEN is set'
+}
+
 check_forgejo_api() {
     local fix="make sure this machine can reach Forgejo; if CI_FORGE_URL ('${CI_FORGE_URL:-}') is an address only the Woodpecker server can resolve, set export FORGEJO_URL=http://<nas-ip>:<port> in $AGENT_SCRIPT, $RESTART_HINT"
     local base=${FORGEJO_URL:-${CI_FORGE_URL:-}}

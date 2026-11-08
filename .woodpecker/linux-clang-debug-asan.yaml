@@ -1,0 +1,39 @@
+# Counterpart of the asan job of .github/workflows/ubuntu-sanitizers.yml: the clang debug
+# build with ASAN. Runs for pull requests only.
+# No secrets: pull request pipelines run code from the pull request branch.
+#
+# One workflow per job instead of a matrix, so the commit status is named after the job
+# (ci/woodpecker/pr/linux-clang-debug-asan); a matrix entry would only get a number.
+
+labels:
+  os: linux
+  env: linux
+
+# Order on the agent: see README.md#order-on-the-agents.
+depends_on:
+  - name: linux-gcc-debug
+    optional: true
+  - name: linux-gcc-release
+    optional: true
+  - name: linux-clang-debug
+    optional: true
+  - name: linux-clang-release
+    optional: true
+  - name: linux-gcc-release-standalone
+    optional: true
+  - name: linux-package-shared
+    optional: true
+  - name: linux-package-standalone
+    optional: true
+
+when:
+  # For pull requests, `branch` is the target branch.
+  - event: pull_request
+    branch: main
+    status: [success, failure]
+
+steps:
+  - name: sanitizer-clang-debug-asan
+    image: bash
+    commands:
+      - bash .woodpecker/scripts/linux-build.sh clang-debug-asan

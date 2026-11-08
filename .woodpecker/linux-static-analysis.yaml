@@ -1,6 +1,7 @@
 # Counterpart of .github/workflows/ubuntu-static-analysis.yml: the clang debug build, which runs
 # clang-tidy on every target. Ninja -k 0 keeps building independent targets after failures, so
-# clang-tidy reports as many compile and analysis issues as possible.
+# clang-tidy reports as many compile and analysis issues as possible. Runs for pull requests only;
+# see README.md#what-runs-when.
 
 labels:
   os: linux
@@ -8,19 +9,30 @@ labels:
 
 # Order on the agent: see README.md#order-on-the-agents.
 depends_on:
-  - name: linux-build
+  - name: linux-gcc-debug
     optional: true
-  - name: linux-package
+  - name: linux-gcc-release
     optional: true
-  - name: linux-sanitizers
+  - name: linux-clang-debug
+    optional: true
+  - name: linux-clang-release
+    optional: true
+  - name: linux-gcc-release-standalone
+    optional: true
+  - name: linux-package-shared
+    optional: true
+  - name: linux-package-standalone
+    optional: true
+  - name: linux-clang-debug-asan
+    optional: true
+  - name: linux-clang-debug-tsan
+    optional: true
+  - name: linux-clang-debug-ubsan
     optional: true
   - name: linux-coverage
     optional: true
 
 when:
-  - event: push
-    branch: main
-    status: [success, failure]
   # For pull requests, `branch` is the target branch.
   - event: pull_request
     branch: main

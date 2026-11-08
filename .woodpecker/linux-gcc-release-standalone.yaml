@@ -1,0 +1,23 @@
+# Counterpart of the gcc release-standalone job of .github/workflows/ubuntu-build.yml.
+# The standalone delivery mode only in a release build, as on GitHub.
+# Runs for pull requests only.
+# A push to main builds nothing; see README.md#what-runs-when.
+# No secrets: pull request pipelines run code from the pull request branch.
+#
+# One workflow per job instead of a matrix, so the commit status is named after the job
+# (ci/woodpecker/pr/linux-gcc-release-standalone); a matrix entry would only get a number.
+
+labels:
+  os: linux
+  env: linux
+
+when:
+  # For pull requests, `branch` is the target branch.
+  - event: pull_request
+    branch: main
+
+steps:
+  - name: build-gcc-release-standalone
+    image: bash
+    commands:
+      - bash .woodpecker/scripts/linux-build.sh gcc-release-standalone

@@ -1,0 +1,37 @@
+# Packaging check for pull requests, which GitHub does not have: builds the shared package the
+# way release.yaml does and runs the app from the ZIP, so a packaging mistake shows up in the
+# pull request instead of at the next release. The MSI is built but not installed, because
+# installing needs an elevated agent.
+#
+# One workflow per job instead of a matrix, so the commit status is named after the job
+# (ci/woodpecker/pr/windows-package-shared); a matrix entry would only get a number.
+
+labels:
+  os: windows
+  env: native
+
+# Order on the agent: see README.md#order-on-the-agents.
+depends_on:
+  - name: windows-msvc-debug
+    optional: true
+  - name: windows-msvc-release
+    optional: true
+  - name: windows-msvc-release-standalone
+    optional: true
+
+when:
+  # For pull requests, `branch` is the target branch.
+  - event: pull_request
+    branch: main
+    status: [success, failure]
+
+steps:
+  - name: package-shared
+    image: powershell
+    commands:
+      - .\.woodpecker\scripts\release-package.ps1 -DeliveryMode shared
+
+  - name: verify-zip-shared
+    image: powershell
+    commands:
+      - .\.woodpecker\scripts\release-verify.ps1 -DeliveryMode shared -ZipOnly
