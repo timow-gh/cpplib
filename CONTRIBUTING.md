@@ -8,8 +8,8 @@ imports this file).
 A file lives in the folder of the concern it belongs to, not next to whoever calls it.
 
 - `.github/` and `.woodpecker/` hold what each CI system runs, and only that.
-- `tools/<concern>/` holds what people run: `new-product/`, `git-hooks/`, `clang-format/` and
-  `woodpecker-agent/`.
+- `tools/<concern>/` holds what people run: `new-product/`, `git-hooks/`, `clang-format/`,
+  `github-sync/` and `woodpecker-agent/`.
 - CI may call a tool (both commit message checks run `tools/git-hooks/`). A tool never depends on a
   CI folder.
 
@@ -83,22 +83,28 @@ and `check-commit-messages.ps1`), `.forgejo/default_merge_message/` and `cliff.t
 
 ## Merging pull requests
 
-Pull requests are opened on GitHub and on Forgejo, and both number them from `#1`. A pull request
-number in a commit subject is therefore ambiguous, so squash merges use the pull request title
-alone:
+Pull requests are opened and merged on Forgejo only. The history holds pull requests of both
+GitHub and Forgejo, each numbered from `#1`, so a number in a commit subject is ambiguous and squash
+merges use the pull request title alone: Forgejo prefills the message from
+`.forgejo/default_merge_message/SQUASH_TEMPLATE.md`, and `cliff.toml` strips ` (#N)` from older
+subjects in the release notes.
 
-- Forgejo prefills the message from `.forgejo/default_merge_message/SQUASH_TEMPLATE.md`.
-- GitHub always appends ` (#N)` to the squash title; delete it in the merge dialog. `cliff.toml`
-  strips it from the release notes in any case.
+## Publishing to GitHub
+
+Forgejo is the source of truth. The public GitHub repository receives `main` and release tags only
+through `tools/github-sync/sync-to-github.sh`, which shows what it would publish unless given
+`--push`. A commit merged on GitHub splits the histories, and the script then refuses to publish.
 
 ## Releases
 
 1. Bump the version in `project()` in `CMakeLists.txt` and in `vcpkg.json` together.
-2. Push a tag `vX.Y.Z` with the same version:
+2. Push a tag `vX.Y.Z` with the same version to Forgejo, which starts the Woodpecker release, then
+   publish it, which starts the GitHub release:
 
    ```sh
    git tag v0.1.0
-   git push origin v0.1.0
+   git push jatinas v0.1.0
+   sh tools/github-sync/sync-to-github.sh --tag v0.1.0 --push
    ```
 
 The release workflows (`.github/workflows/release.yml`, `.woodpecker/release*.yaml`) refuse a tag

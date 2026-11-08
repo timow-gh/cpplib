@@ -1,8 +1,9 @@
 # Woodpecker CI
 
 These workflows run the CI of this repository on a self-hosted Forgejo + Woodpecker setup. They
-mirror `.github/workflows/`, which stays the primary CI. The header of each workflow file names its
-GitHub counterpart and how it differs.
+mirror `.github/workflows/` and check every pull request, while GitHub runs its workflows only when
+`main` or a tag is [published](../CONTRIBUTING.md#publishing-to-github). The header of each workflow
+file names its GitHub counterpart and how it differs.
 
 Two agents run them, both with the local backend: a native Windows agent (labels `os=windows`,
 `env=native`) and a Linux agent (labels `os=linux`, `env=linux`) on an Ubuntu machine or in WSL.
