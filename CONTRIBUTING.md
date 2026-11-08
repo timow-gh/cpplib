@@ -92,8 +92,9 @@ subjects in the release notes.
 ## Publishing to GitHub
 
 Forgejo is the source of truth. The public GitHub repository receives `main` and release tags only
-through `tools/github-sync/sync-to-github.sh`, which shows what it would publish unless given
-`--push`. A commit merged on GitHub splits the histories, and the script then refuses to publish.
+through `tools/github-sync/sync-to-github.sh` (PowerShell: `sync-to-github.ps1`), which shows what
+it would publish unless given `--push`. It works from any clone that can reach Forgejo. A commit
+merged on GitHub splits the histories, and the script then refuses to publish.
 
 ## Releases
 
@@ -103,7 +104,7 @@ through `tools/github-sync/sync-to-github.sh`, which shows what it would publish
 
    ```sh
    git tag v0.1.0
-   git push jatinas v0.1.0
+   git push <forgejo-remote> v0.1.0
    sh tools/github-sync/sync-to-github.sh --tag v0.1.0 --push
    ```
 
